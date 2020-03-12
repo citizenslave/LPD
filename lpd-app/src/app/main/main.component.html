@@ -1,0 +1,6 @@
+<p-panel toggleable="true" [(collapsed)]="votersService.searchBar" toggler="header" *ngIf="showSearchPanel()">
+	<p-header><app-voter-search-bar></app-voter-search-bar></p-header>
+	<app-voter-search-form></app-voter-search-form>
+</p-panel>
+
+<app-voter-listing></app-voter-listing>

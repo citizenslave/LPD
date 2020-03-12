@@ -1,0 +1,12 @@
+<span class="ui-panel-title" style="font-size: 18px; display: inline-block; margin-top: 2px;">
+	Voter Search{{ votersService.voterData.count && votersService.searchBar?' - ('+votersService.voterData.count+') Results':'' }}
+</span>
+<p-button [disabled]="!(votersService.voterData && votersService.voterData.results)" type="button"
+		[ngStyle]="{ 'float': 'right', 'margin-left': '5px' }" label="Clear" (click)="clearVoterSearch($event)">
+</p-button>
+<p-button [disabled]="!votersService.voterForm.dirty || voterSearchService.isSearchLoading" type="button"
+		[ngStyle]="{ 'float': 'right', 'margin-left': '5px' }" label="Reset" (click)="clearVoterSearch($event, true)">
+</p-button>
+<p-button [disabled]="voterSearchService.searchBar || voterSearchService.isSearchLoading" type="button"
+		[ngStyle]="{ 'float': 'right' }" label="Search" (click)="voterSearchService.query($event)">
+</p-button>

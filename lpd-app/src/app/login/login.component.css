@@ -1,0 +1,67 @@
+ul.panelItems {
+	list-style: none;
+	text-align: center;
+	padding: 0;
+}
+
+ul {
+	list-style: none;
+}
+
+ul > li.aorselect {
+	margin: 0px 0px 10px -40px !important;
+}
+
+ul > li {
+	margin: 0px 0px 10px 0px;
+}
+
+i.helperIcon {
+	font-size: 2em;
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+span.fakeLink {
+	cursor: pointer;
+	color: blue;
+	text-decoration: underline;
+}
+
+.multiselect {
+	width: 172.799px;
+	text-align: left;
+}
+
+.aorselect {
+	width: 450px;
+	text-align: left;
+}
+
+.registerButton {
+	width: 80px;
+	margin-left: 10px;
+	margin-right: 5px
+}
+
+div.overlay {
+	position: absolute;
+	z-index: 10000;
+	background-color: #888;
+	opacity: 0.7;
+}
+
+div.overlay > i {
+	position: absolute;
+	top: calc(50% - 0.5em);
+	left: 50%;
+	font-size: 5em;
+	color: black;
+}
+
+div.overlay.login {
+	top: calc(-1.142em - 6px);
+	bottom: calc(-1.142em - 6px);
+	left: calc(-0.857em - 1px);
+	right: calc(-0.857em - 1px);
+}

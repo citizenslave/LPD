@@ -1,0 +1,103 @@
+<p-panel #login [toggleable]="!loggedIn" [toggler]="!loggedIn?'header':'icon'" [(collapsed)]="collapseLogin">
+	<p-header>
+		<span class="ui-panel-title" style="font-size: 18px; display: inline-block; margin-top: 2px;">
+			<p-menu #userMenu [popup]="true" [model]="userMenuItems"></p-menu>
+			<p-button type="button" icon="pi pi-bars" (click)="userMenu.toggle($event)"
+					[ngStyle]="{ 'margin-right': '10px' }" *ngIf="loggedIn"></p-button>
+			{{ loggedIn?userService.userProfile.username:'Login' }}
+		</span>
+		<p-button *ngIf="loggedIn" [ngStyle]="{ 'float': 'right' }"
+				type="button" label="Logout" (click)="logoutUser($event)"></p-button>
+	</p-header>
+	<form [formGroup]="loginForm" (submit)="loginUser($event)" *ngIf="!registered && !loggedIn">
+		<div style="position: relative;">
+			<div class="overlay login" *ngIf="isLoginLoading">
+				<i class="pi pi-spin pi-spinner" [style.fontSize]="'5em'"></i>
+			</div>
+			<ul class="panelItems">
+				<li>
+					<h4>Username (Email):</h4>
+					<input type="text" pInputText *ngIf="!publicKey" formControlName="username"/>
+					<span *ngIf="publicKey" (click)="publicKey = undefined" class="fakeLink">
+						{{ userService.userProfile.username }}
+					</span>
+				</li>
+				<li *ngIf="publicKey">
+					<h4>Password:</h4>
+					<input #password type="password" pPassword formControlName="password"/>
+				</li>
+				<li *ngIf="(!loginForm.valid && publicKey) || !loginForm.get('username').valid" ngClass="error">
+					{{ errorMessage }}
+				</li>
+				<li>
+					<p-button type="button" styleClass="ui-button-secondary" class="registerButton"
+							[disabled]="!loginForm.get('username').valid"
+							(click)="loginUser($event, true)" label="Register" *ngIf="!publicKey"></p-button>
+					<p-button type="button" [ngStyle]="{ 'width': '80px' }"
+							[disabled]="!loginForm.get('username').valid || (publicKey && !loginForm.valid)"
+							(click)="loginUser($event)" [label]="publicKey?'Login':'Next'"></p-button><br/>
+					<input type="submit" style="visibility: hidden; width: 0px; height: 0px;"/>
+				</li>
+				<li [style.margin-top.em]="-1.5">
+					<span class="fakeLink" (click)="loginUser($event, true)">
+						Forgot Password?
+					</span>
+				</li>
+			</ul>
+		</div>
+	</form>
+	<ul *ngIf="registered && !loggedIn">
+		<li>
+			<h4>{{ registrationStatus }}</h4>
+			<span (click)="logoutUser($event)" class="fakeLink">Retry</span><br/><br/>
+			<span (click)="loginUser($event, true)" class="fakeLink">Reset Password/Resend Link</span>
+		</li>
+	</ul>
+</p-panel>
+
+<p-dialog header="User Management" [(visible)]="displayUserManagement" [modal]="true"
+		(onHide)="!displayAorSelection&&!aorValuesLoading?aorUser = undefined:''">
+	<div class="overlay permissions" *ngIf="isPermissionsLoading"></div>
+	<p-accordion (onOpen)="openUser($event)" [activeIndex]="aorUser">
+		<p-accordionTab [header]="user.username" *ngFor="let user of usersList" [disabled]="disableUser(user)">
+			<ul [ngStyle]="{ 'text-align': 'left', 'margin-left': '-15%' }" class="panelItems">
+				<li *ngFor="let permission of userService.cacheService.permissions | keyvalue:sortPerms; index as i"
+						[ngStyle]="{ 'text-align': 'left' }">
+					<p-checkbox [label]="permission.key" [value]="permission.value.mask"
+							[disabled]="disableCheckbox(permission.key)"
+							(onChange)="changePermission(user.username, permission.value.mask)"
+							[(ngModel)]="permissions"></p-checkbox>
+					<p-button type="button" label="AOR" *ngIf="permission.value.aor"
+							[ngStyle]="{ 'float': 'right', 'height': '0.5em' }"
+							[style]="{ 'font-size': '10px' }"
+							(click)="setAor(user.username, permission.value.mask)"></p-button>
+					<i class="pi pi-question-circle helperIcon" [ngStyle]="{ 'font-size': '1.25em' }" 
+							(click)="aorHelp.toggle($event)" *ngIf="permission.value.aor"></i>
+				</li>
+			</ul>
+		</p-accordionTab>
+	</p-accordion>
+</p-dialog>
+
+<p-dialog [header]="aorPermission+' AOR Selection for User: '+usersList[aorUser]?.username"
+		[(visible)]="displayAorSelection" [modal]="true" (onHide)="hideAor()">
+	<div class="overlay aor" *ngIf="aorValuesLoading">
+		<i class="pi pi-spin pi-spinner" [style.margin-left]="'-0.5em'" [style.fontSize]="'5em'"></i>
+	</div>
+	<ul class="panelItems">
+		<li *ngFor="let aorField of aorFields" class="aorselect">
+			<p-multiSelect [defaultLabel]="aorField.aorLabel" [options]="aorValues[aorField.aorLabel]" [virtualScroll]="true"
+					[(ngModel)]="aorSelection[aorField.aorLabel]" styleClass="aorselect" appendTo="body"
+					(onPanelShow)="getValues(aorField)" [maxSelectedLabels]="0" (onChange)="changeAor()"
+					[selectedItemsLabel]="'{0} '+aorField.aorLabel+' Item(s) Selected'">
+			</p-multiSelect><br/>
+		</li>
+	</ul>
+</p-dialog>
+
+<p-overlayPanel #aorHelp [style]="{ 'max-width': '20%' }" [showCloseIcon]="true">
+	<h3>AOR Selection</h3>
+	<p>AOR Selection determines which sections of a database are accessible to the user for this permission.</p><br/>
+	<p>AOR criteria are applied as an OR condition on the filter, therefore if a record meets any of the selected AOR criteria,
+	it will be accessible, even if it does not meet all of them.</p><br/>
+</p-overlayPanel>

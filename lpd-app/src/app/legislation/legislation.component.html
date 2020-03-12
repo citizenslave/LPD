@@ -1,0 +1,111 @@
+<p-panel>
+	<p-header>
+		<span class="ui-panel-title" style="font-size: 18px; display: inline-block; margin-top: 2px; width: 100%;">
+			<p-button [icon]="syncIcon()" (click)="doSync()" [ngStyle]="{ 'margin-right': '15px' }"
+					[pTooltip]="showSyncStatus()" escape="false" tooltipStyleClass="syncTip"
+					(mouseover)="checkSync(true)" (mouseout)="checkSync(false)"
+					[disabled]="showSyncStatus(true) || !userService.checkPermission('SYSADMIN')"></p-button>
+			<span>Delaware Legislation ({{ showSyncStatus(true)?'???':billCount }})</span>
+			<span style="float: right;"><span style="margin-right: 0.5em;">Search Legislation:</span>
+				<div class="ui-inputgroup" style="display: inline-block;">
+					<input #legislationFilter type="text" pInputText [(ngModel)]="query.query"
+							(ngModelChange)="updateQuery()" size="50" style="vertical-align: text-bottom;"/>
+					<span style="margin-left: -5%; margin-top: -1%;">
+						<button pButton type="button" icon="pi pi-times"
+								(click)="updateQuery('')" class="clearSearch"></button>
+					</span>
+				</div>
+			</span>
+		</span>
+	</p-header>
+	<div style="position: relative;">
+		<div class="overlay legislation" *ngIf="isLoading">
+			<i class="pi pi-spin pi-spinner" [style.fontSize]="'5em'"></i>
+		</div>
+		<p-table #legislationList [value]="legislation" dataKey="LegislationId" *ngIf="!showSyncStatus(true)"
+				rowExpandMode="single" [rows]="25" [first]="query.first" [lazy]="true" (onLazyLoad)="lazyLoadLegis($event)"
+				(onRowExpand)="showLegislation($event)" (onRowCollapse)="showSubstitute($event, false)"
+				[paginator]="true" [totalRecords]="billCount" [scrollable]="true" scrollHeight="calc(100vh - 200px)">
+			<ng-template pTemplate="header">
+				<tr>
+					<th>Bill Number</th>
+					<th>Title</th>
+					<th>Status</th>
+					<th>Last Update</th>
+				</tr>
+			</ng-template>
+			<ng-template pTemplate="body" let-bill>
+				<tr>
+					<td [pRowToggler]="bill" style="cursor: pointer; display: table-cell; text-align: center;">
+						{{ bill.LegislationDisplayCode }}
+					</td>
+					<td [pRowToggler]="bill" style="cursor: pointer; display: table-cell; text-align: left;">
+						{{ bill.LongTitle }}
+					</td>
+					<td [pRowToggler]="bill" style="cursor: pointer; display: table-cell; text-align: center;">
+						{{ bill.ChamberName?.trim() }} {{ bill.StatusName }}
+					</td>
+					<td [pRowToggler]="bill" style="cursor: pointer; display: table-cell; text-align: center;">
+						{{ bill.LegislationStatusDateTime | date }}
+					</td>
+				</tr>
+			</ng-template>
+			<ng-template pTemplate="rowexpansion" let-bill>
+				<tr *ngIf="bill.LegislationStatusId === 12">
+					<td [attr.colspan]="'4'">
+						<p-table #substituteList [value]="bill.substitutes" dataKey="LegislationId"
+								rowExpandMode="single" [scrollable]="true"
+								(onRowExpand)="showSubstitute($event, true)" (onRowCollapse)="showSubstitute($event, false)">
+							<ng-template pTemplate="header">
+								<tr>
+									<th>Substitute Number</th>
+									<th>Title</th>
+									<th>Status</th>
+									<th>Last Update</th>
+								</tr>
+							</ng-template>
+							<ng-template pTemplate="body" let-sub>
+								<tr>
+									<td [pRowToggler]="sub" style="cursor: pointer; display: table-cell; text-align: center;">
+										{{ sub.LegislationNumber }}
+									</td>
+									<td [pRowToggler]="sub" style="cursor: pointer; display: table-cell; text-align: left;">
+										{{ sub.LongTitle }}
+									</td>
+									<td [pRowToggler]="sub"  style="cursor: pointer; display: table-cell; text-align: center;">
+										{{ sub.ChamberName?.trim() }} {{ sub.StatusName }}
+									</td>
+									<td [pRowToggler]="sub" style="cursor: pointer; display: table-cell; text-align: center;">
+										{{ sub.LegislationStatusDateTime | date }}
+									</td>
+								</tr>
+							</ng-template>
+							<ng-template pTemplate="rowexpansion" let-sub>
+								<tr *ngIf="sub.HasAmendments && sub.amendments?.length">
+									<td [attr.colspan]="'4'">
+										<legislation-amendments-view [amendments]="sub.amendments"></legislation-amendments-view>
+									</td>
+								</tr>
+								<tr>
+									<td [attr.colspan]="'4'">
+										<legislation-bill-view [bill]="sub"></legislation-bill-view>
+									</td>
+								</tr>
+							</ng-template>
+						</p-table>
+					</td>
+				</tr>
+				<tr *ngIf="bill.HasAmendments && bill.amendments?.length && !substituteShown">
+					<td [attr.colspan]="'4'">
+						<legislation-amendments-view [amendments]="bill.amendments"></legislation-amendments-view>
+					</td>
+				</tr>
+				<tr *ngIf="!substituteShown">
+					<td [attr.colspan]="'4'">
+						<legislation-bill-view [bill]="bill"></legislation-bill-view>
+					</td>
+				</tr>
+			</ng-template>
+		</p-table>
+	</div>
+</p-panel>

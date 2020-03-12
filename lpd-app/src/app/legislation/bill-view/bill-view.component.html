@@ -1,0 +1,194 @@
+<div>
+    <p-tabView>
+        <p-tabPanel leftIcon="pi pi-info" header="Synopsis">
+            {{ bill.Synopsis }}
+            <a [href]="getFullTextLink(bill)" target="_blank" title="Full Text">
+                <i class="pi pi-external-link"></i>
+            </a>
+        </p-tabPanel>
+        <p-tabPanel leftIcon="pi pi-user" header="Sponsors">
+            <div style="width: 70%; margin-left: 15%;" *ngFor="let sponsor of bill.sponsorData">
+                <span style="font-weight: bold;">Primary Sponsor:</span>&nbsp;
+                <span [class]="getLinkClass()" (click)="showLegislator(sponsor.legislatorData)">
+                    {{ sponsor.legislatorData.MemberTypeName }}
+                    {{ sponsor.legislatorData.FirstName }}
+                    {{ sponsor.legislatorData.LastName }} ({{ sponsor.legislatorData.PartyCode }})
+                </span>
+                <span style="float: right;">Introduced: {{ bill.IntroductionDateTime | date }}</span>
+            </div>
+            <div style="width: 70%; margin-left: 15%;" *ngFor="let sponsor of bill.addlSponsorData">
+                <span style="font-weight: bold;">Additional Sponsor:</span>&nbsp;
+                <span [class]="getLinkClass()" (click)="showLegislator(sponsor.legislatorData)">
+                    {{ sponsor.legislatorData.MemberTypeName }}
+                    {{ sponsor.legislatorData.FirstName }}
+                    {{ sponsor.legislatorData.LastName }} ({{ sponsor.legislatorData.PartyCode }})
+                </span>
+            </div>
+            <div style="width: 70%; margin-left: 15%" *ngFor="let sponsor of bill.cosponsorData">
+                <span style="font-weight: bold;">Co-Sponsor:</span>&nbsp;
+                <span [class]="getLinkClass()" (click)="showLegislator(sponsor.legislatorData)">
+                    {{ sponsor.legislatorData.MemberTypeName }}
+                    {{ sponsor.legislatorData.FirstName }}
+                    {{ sponsor.legislatorData.LastName }} ({{ sponsor.legislatorData.PartyCode }})
+                </span>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel leftIcon="pi pi-folder-open" header="Updates" *ngIf="bill.reportItems.length">
+            <div style="width: 70%; margin-left: 15%;" *ngFor="let report of bill.reportItems">
+                <span style="text-align: left;">{{ report.ActionDescription }}</span>
+                <span style="float: right;">{{ report.OccuredAtDateTime }}</span>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel leftIcon="pi pi-calendar" header="Upcoming Hearings" *ngIf="bill.committeeMeetings?.length">
+            <div style="width: 70%; margin-left: 15%;" *ngFor="let meeting of bill.committeeMeetings">
+                <span>
+                    <span [class]="getLinkClass()"
+                            (click)="getCommitteeInfo(meeting.CommitteeId)">{{ meeting.CommitteeTypeName }}
+                    {{ meeting.CommitteeName }}</span>
+                    ({{ meeting.AddressAliasNickname }})
+                </span>
+                <span style="float: right;">{{ meeting.MeetingDateTime }}</span>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel leftIcon="pi pi-users" header="Committee Reports" *ngIf="bill.committeeReports?.length">
+            <div style="width: 70%; margin-left: 15%;" *ngFor="let report of bill.committeeReports; last as isLast">
+                <div style="width: calc(100%); text-align: center; font-weight: bold;">
+                    <span [class]="getLinkClass()"
+                            (click)="getCommitteeInfo(report.CommitteeId)">{{ report.CommitteeFullName }}</span>
+                    ({{ report.FavorableVoteCount }} - {{ report.OnMeritVoteCount }} - {{ report.UnfavorableVoteCount }}
+                    / {{ report.MemberCount }})
+                </div>
+                <div>{{ report.LegislationPurpose || 'No purpose stated.' }}</div><br/>
+                <div>{{ report.CommitteeFindings || 'No findings.' }}</div>
+                <hr *ngIf="!isLast"/>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel leftIcon="pi pi-check" header="Voting Reports" *ngIf="bill.votingReports.length">
+            <div style="width: 70%; margin-left: 15%;" *ngFor="let report of bill.votingReports; last as isLast">
+                <div style="width: calc(100%); text-align: center; font-weight: bold;">
+                    <span (click)="saveRollCall(report)" [class]="report.Model.AssemblyMemberVotes.length?'getRecord':''">
+                        {{ report.Model.ChamberName }} Vote ({{ report.Model.RollCallVoteType }}) -
+                        {{ report.Model.RollCallStatus }}
+                    </span>
+                </div>
+                <div *ngIf="report.Model.AssemblyMemberVotes.length">
+                    <div style="width: calc(60%); margin-left: 20%;">
+                        <span>YES:</span><span style="float: right;">{{ report.Model.YesVoteCount }}</span>
+                    </div>
+                    <div style="width: calc(60%); margin-left: 20%;">
+                        <span>NO:</span><span style="float: right;">{{ report.Model.NoVoteCount }}</span>
+                    </div>
+                    <div style="width: calc(60%); margin-left: 20%;">
+                        <span>ABSENT:</span><span style="float: right;">{{ report.Model.AbsentVoteCount }}</span>
+                    </div>
+                    <div style="width: calc(60%); margin-left: 20%;">
+                        <span>NOT VOTING:</span><span style="float: right;">{{ report.Model.NotVotingCount }}</span>
+                    </div>
+                </div>
+                <div *ngIf="!report.Model.AssemblyMemberVotes.length" style="text-align: center;">
+                    <em>Voice Vote.</em>
+                </div>
+                <hr *ngIf="!isLast"/>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel leftIcon="pi pi-comments" header="Ratings and Comments">
+            <div *ngIf="!userService.checkPermission('LEG')">Log in to submit Ratings and Comments.</div>
+            <div *ngIf="getMyRating()">
+                <h3 style="display: inline-block; margin-top: 0.5em; margin-bottom: 0.5em;">My Ratings & Comments</h3>
+                <div style="text-align: center; width: 100%;">
+                    <p-rating style="display: inline-block;" [stars]="1" (onRate)="rateBill(-4, $event)"
+                            [(ngModel)]="negative3Rating" [cancel]="false"></p-rating>
+                    <p-rating style="display: inline-block;" [stars]="1" (onRate)="rateBill(-3, $event)"
+                            [(ngModel)]="negative2Rating" [cancel]="false"></p-rating>
+                    <p-rating style="display: inline-block;" [stars]="1" (onRate)="rateBill(-2, $event)"
+                            [(ngModel)]="negative1Rating" [cancel]="false"></p-rating>
+                    <p-rating style="display: inline-block;" [stars]="3" (onRate)="rateBill(0, $event)"
+                            [(ngModel)]="positiveRating" (onCancel)="rateBill(0, $event)"></p-rating>
+                </div>
+                <p-editor [(ngModel)]="comments[bill.LegislationId]" styleClass="editor">
+                    <p-header></p-header>
+                </p-editor><div style="text-align: right; margin-top: 5px; margin-bottom: 10px;">
+                <p-button [style]="{ 'text-align': 'right' }" label="Save" icon="pi pi-save" iconPos="left"
+                        (click)="saveComment(bill.LegislationId)"></p-button></div>
+                <hr/>
+            </div>
+            <span>
+                <h3 style="display: inline-block; margin-top: 0.5em; margin-bottom: 0.5em;">User Ratings & Comments</h3>
+                <span style="float: right; vertical-align: text-bottom;">
+                    <p-dropdown [options]="commentFilterOptions" [(ngModel)]="selectedCommentFilter"
+                            [disabled]="true" (onChange)="refreshComments(); refreshRatings()"></p-dropdown>
+                </span>
+            </span>
+            <div style="text-align: center; width: 100%;">
+                <p-rating style="display: inline-block;" [stars]="1" [readonly]="true" disabled="true"
+                        [(ngModel)]="showNegative3Rating" [cancel]="false"></p-rating>
+                <p-rating style="display: inline-block;" [stars]="1" [readonly]="true" disabled="true"
+                        [(ngModel)]="showNegative2Rating" [cancel]="false"></p-rating>
+                <p-rating style="display: inline-block;" [stars]="1" [readonly]="true" disabled="true"
+                        [(ngModel)]="showNegative1Rating" [cancel]="false"></p-rating>
+                <p-rating style="display: inline-block;" [stars]="3" [readonly]="true" disabled="true"
+                        [(ngModel)]="showPositiveRating" iconCancelClass="pi pi-circle-on"
+                        [iconCancelStyle]="{ 'color': '#333333' }"></p-rating><br/>
+                <span>
+                    ({{ totalRating | number:'1.2-2' }}, {{ ratingCount | i18nPlural: ratingsMap }})
+                </span>
+            </div>
+            <div *ngFor="let comment of showComments[bill.LegislationId]; let isLast = last">
+                <hr style="width: 50%"/>
+                <span [innerHTML]="comment.comment"></span>
+                <sub>{{ comment.timestamp | date:'EEEE, MMMM d, y, h:mm:ssaaaaa' }}</sub>&nbsp;
+                <sub [class]="getLinkClass()" (click)="confirmDelete(comment)"
+                        *ngIf="canDeleteComment(comment)">Delete</sub>
+            </div>
+            <div *ngIf="!showComments[bill.LegislationId]?.length">No comments.</div>
+        </p-tabPanel>
+    </p-tabView>
+</div>
+
+<p-dialog #rollcall [(visible)]="rollCallVote.length" (onHide)="!isLoading?rollCallVote = []:rollCallVote = rollCallVote" [dismissableMask]="!isLoading"
+        [style]="{ 'width': '30%' }" [modal]="true" [draggable]="false" [resizable]="false"
+        [showHeader]="false" (click)="closeDialog($event, 'rollCallVote')">
+    <table>
+        <ng-container *ngFor="let x of [].constructor(14); let i = index">
+            <tr *ngIf="i*3 < rollCallVote.length">
+                <ng-container *ngFor="let y of [].constructor(3); let j = index">
+                    <td *ngIf="(i*3)+j < rollCallVote.length">
+                        <span [class]="getLinkClass()"
+                                (click)="showLegislator(rollCallVote[(i*3)+j].ShortName, rollcall)">
+                            {{ rollCallVote[(i*3)+j]?.ShortName }}</span> - {{ rollCallVote[(i*3)+j]?.SelectVoteTypeCode}}
+                    </td>
+                </ng-container>
+            </tr>
+        </ng-container>
+    </table>
+</p-dialog>
+
+<p-dialog #committee [(visible)]="committeeInfo" (onClose)="committeeInfo = undefined" [dismissableMask]="true"
+        [style]="{ 'width': '40%' }" [modal]="true" [draggable]="false" [resizable]="false"
+        [header]="committeeInfo?.FullCommitteeName" closeIcon="" (click)="closeDialog($event, 'committeeInfo')">
+    <div *ngFor="let member of committeeInfo?.members; let i=index">
+        <span style="font-weight: bold;">
+            {{ committeeInfo.members[i-1]?.position === 'Members'?'&nbsp;':member.position+':' }}
+        </span>
+        <span style="float: right;" [class]="getLinkClass()" (click)="showLegislator(member, committee)">
+            {{ member.MemberTypeName }} {{ member.DisplayName }} ({{ member.PartyCode }})
+        </span>
+    </div>
+</p-dialog>
+
+<p-dialog [(visible)]="legislatorInfo" (onClose)="legislatorInfo = undefined" [dismissableMask]="true"
+        [style]="{ 'width': '30%' }" [modal]="true" [draggable]="false" [resizable]="false"
+        [showHeader]="false" (click)="closeDialog($event, 'legislatorInfo')">
+    <img width="30%" [src]="getCacheLink(legislatorInfo?.PersonId) || ''"/>
+    <span style="float: right; width: 60%;">
+        <h3>{{ legislatorInfo?.MemberTypeName }}<br/>{{ legislatorInfo?.DisplayName }}</h3>
+        <div>({{ legislatorInfo?.PartyCode }}-{{ legislatorInfo?.DistrictNumber }})</div><br/>
+        <div *ngIf="legislatorInfo?.phone?.length">{{ legislatorInfo?.phone }}</div>
+        <a id="mailLink" [href]="getMailLink(legislatorInfo?.email)" target="_blank">{{ legislatorInfo?.email }}</a>
+    </span>
+</p-dialog>
+
+<p-confirmDialog key="deleteCommentConfirmation"
+        acceptButtonStyleClass="ui-button-danger"
+        rejectButtonStyleClass="ui-button-secondary">
+</p-confirmDialog>

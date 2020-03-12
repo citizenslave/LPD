@@ -1,0 +1,146 @@
+ul.panelItems {
+	list-style: none;
+	text-align: center;
+}
+
+ul {
+	list-style: none;
+}
+
+ul > li {
+	margin: 0px 0px 10px 10px;
+}
+
+ul > li.error {
+	color: red;
+}
+
+ul > li.voterField {
+	display: inline-grid;
+}
+
+ul > li.voterField > span {
+	margin-top: 10px;
+}
+
+ul > li > h4.search {
+	margin-bottom: 5px;
+	margin-top: 2px;
+}
+
+ul > li > h4.viewer {
+	margin-bottom: -5px;
+	margin-top: 2px;
+}
+
+ul.displayFields > li > input {
+	margin-top: 0.7em;
+}
+
+ul.searchFields > li > input {
+	padding: 0.44em;
+	border-radius: 3px;
+	border: 1px solid #a6a6a6;
+	font-size: 14px;
+	font-family: "Open Sans", "Helvetica Neue", sans-serif;
+}
+
+.multiselect {
+	width: 172.799px;
+	text-align: left;
+}
+
+.aorselect {
+	width: 450px;
+	text-align: left;
+}
+
+.multiselect .ui-multiselect-trigger {
+	background-color: transparent !important;
+}
+
+.aorselect .ui-multiselect-trigger {
+	background-color: transparent !important;
+}
+
+.editor .ql-editor {
+	background-color: transparent !important;
+}
+
+.voterField span p {
+	margin: auto;
+	text-align: left;
+	width: 60em;
+}
+
+.voterData {
+	color: darkviolet;
+	cursor: pointer;
+}
+
+div.overlay {
+	position: absolute;
+	z-index: 10000;
+	background-color: #888;
+	opacity: 0.7;
+}
+
+div.overlay > i {
+	position: absolute;
+	top: calc(50% - 0.5em);
+	left: 50%;
+	font-size: 5em;
+	color: black;
+}
+
+i.helperIcon {
+	font-size: 2em;
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+div.overlay.login {
+	top: calc(-1.142em - 6px);
+	bottom: calc(-1.142em - 6px);
+	left: calc(-0.857em - 1px);
+	right: calc(-0.857em - 1px);
+}
+
+div.overlay.search {
+	top: calc(-1.142em - 6px);
+	bottom: calc(-1.142em - 6px);
+	left: calc(-0.857em - 1px);
+	right: calc(-0.857em - 1px);
+}
+
+div.overlay.editVoter {
+	top: calc(-1.142em - 5px);
+	bottom: calc(-1.142em - 5px);
+	left: -0.857em;
+	right: -0.857em;
+}
+
+div.overlay.permissions {
+	top: 0px;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
+}
+
+div.overlay.aor {
+	top: 0px;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
+}
+
+.registerButton {
+	width: 131px;
+	margin-left: 15px;
+	margin-right: 5px
+}
+
+.generateButton {
+	margin-left: 5px;
+	margin-right: 5px;
+}

@@ -1,0 +1,78 @@
+<p-table #voterList [value]="votersService.voterData.results" dataKey="VOTER ID"
+		rowExpandMode="single" (onRowExpand)="votersService.expandRow($event)" [rows]="25"
+		[paginator]="true" [totalRecords]="votersService.voterData.count"
+		[scrollable]="true" scrollHeight="90%" *ngIf="votersService.queryObj"
+		[loading]="voterSearchService.isSearchLoading" [lazy]="true" (onLazyLoad)="lazyLoadVoters($event)">
+	<ng-template pTemplate="header">
+		<tr>
+			<ng-container *ngFor="let field of votersService.fields">
+				<th *ngIf="votersService.checkDisplayFlags(field.display, 'RESULT')"
+						[style.width]="isBooleanField(field.type)?'80px':'auto'">
+					{{ field.label }}
+				</th>
+			</ng-container> 
+		</tr>
+	</ng-template>
+	<ng-template pTemplate="body" let-voter>
+		<tr>
+			<ng-container *ngFor="let field of votersService.fields">
+				<td *ngIf="votersService.checkDisplayFlags(field.display, 'RESULT')" [pRowToggler]="voter"
+						style="cursor: pointer; display: table-cell; text-align: center;"
+						[style.width]="isBooleanField(field.type)?'80px':'auto'"
+						[class]="isBooleanField(field.type)?(!voter[field.field]?'pi pi-times':'pi pi-check'):''">
+					{{ (isBooleanField(field.type)?'':(field.type === votersService.cacheService.voterFieldTypes.CALENDAR?voter[field.field].split('T')[0]:voter[field.field])) }}
+				</td>
+			</ng-container>
+		</tr>
+	</ng-template>
+	<ng-template pTemplate="rowexpansion" let-voter>
+		<tr>
+			<td [attr.colspan]="votersService.resultColumns">
+				<div style="position: relative;">
+					<div class="overlay editVoter" *ngIf="votersService.isEditLoading">
+						<i class="pi pi-spin pi-spinner" [style.fontSize]="'5em'"></i>
+					</div>
+					<form [formGroup]="votersService.editForm">
+						<ul class="panelItems displayFields">
+							<ng-container *ngFor="let field of votersService.fields">
+								<br *ngIf="field.clear"/>
+								<li *ngIf="votersService.checkDisplayFlags(field.display, 'VIEWER')" class="voterField">
+									<h4 class="viewer">{{ field.label }}:</h4>
+									<span (click)="editField($event, field)" [ngClass]="canEditField(voter, field)?'voterData':''"
+											*ngIf="!votersService.editField[field.field] && !isBooleanField(field.type)"
+											[innerHTML]="getFieldText(voter[field.field], field)">
+									</span>
+									<span (click)="canEditField(voter, field)?editField($event, field):''"
+											[ngClass]="voter[field.field]?'pi pi-check':'pi pi-times'"
+											*ngIf="isBooleanField(field.type)"
+											[ngStyle]="canEditField(voter, field)?{ 'cursor': 'pointer' }:{}">
+									</span>
+									<ng-container *ngIf="votersService.editField[field.field]" [ngSwitch]="field.type">
+										<p-editor #editVoterData [formControlName]="field.field"
+												[ngStyle]="{ 'width': '60em', 'margin-top': '1em' }" styleClass="editor"
+												(focusout)="votersService.updateVoterField($event, field)"
+												 *ngSwitchCase="votersService.cacheService.voterFieldTypes.TEXT">
+											<p-header></p-header>		 	
+										 </p-editor>
+										<input type="text" pInputText *ngSwitchDefault
+												[formControlName]="field.field" #editVoterData
+												(keydown.enter)="votersService.updateVoterField($event, field)"
+												(blur)="votersService.updateVoterField($event, field)"/>
+									</ng-container>
+								</li>
+							</ng-container>
+						</ul>
+					</form>
+				</div>
+			</td>
+		</tr>
+	</ng-template>
+	<ng-template pTemplate="summary">
+		<p-button label="Generate Call Sheet" type="button"
+				class="generateButton" (click)="callSheetComponent.generateCallSheet()"></p-button>
+		<p-button label="Generate Email List" type="button"
+				class="generateButton" (click)="generateEmailList()"></p-button>
+	</ng-template>
+</p-table>
+<app-call-sheet></app-call-sheet>
+<textarea #emailsField [(value)]="emails" style="opacity: 0;"></textarea>

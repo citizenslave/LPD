@@ -1,0 +1,43 @@
+<p-sidebar [(visible)]="showCallSheet" [style]="{ 'width': '20%' }" [modal]="false">
+	<h1>Call Sheet</h1>
+	<p-table [value]="votersService.voterData.results" [scrollable]="true" scrollHeight="85%">
+		<ng-template pTemplate="caption">
+			<tr>
+				<td>
+					<label style="margin-right: 10px;">Link Template:</label>
+					<input type="text" pInputText [(value)]="callLinkTemplate" (input)="callLinkTemplate = $event.srcElement.value"
+							(change)="updateCallSheetLink($event.srcElement.value)"/>
+					<i class="pi pi-question-circle helperIcon" (click)="callSheetHelp.toggle($event)"></i>
+				</td>
+			</tr>
+		</ng-template>
+		<ng-template pTemplate="header">
+			<tr>
+				<th>
+					Name
+				</th><th>
+					Phone
+				</th>
+			</tr>
+		</ng-template>
+		<ng-template pTemplate="body" let-voter>
+			<tr (click)="votersService.showVoter(voter['VOTER ID'])">
+				<td>{{ voter['FIRST-NAME'] }} {{ voter['LAST-NAME'] }}</td>
+				<td><a [href]="callLinkTemplate+voter['PHONE']" target="_blank">{{ voter['PHONE'] }}</a></td>
+			</tr>
+		</ng-template>
+	</p-table>
+</p-sidebar>
+
+<p-overlayPanel #callSheetHelp [style]="{ 'max-width': '20%' }" [showCloseIcon]="true">
+	<h3>Call Sheet Link Templates</h3>
+	<p>The easiest way to configure the call sheet link template on a PC is to connect it to a <a href="http://hangouts.google.com" target="_blank">
+		Google Hangouts</a> account.  You will need a Google Account.  By default, calls will originate from a 'Restricted' number.  You can set up a
+		<a href="http://voice.google.com" target="_blank">Google Voice</a> account to register a local phone number to originate the calls.</p><br/>
+	<p>Google Hangouts links will then take the form of:</p>
+	<pre>https://hangouts.google.com/?action=chat&pn=</pre>
+	<p>The voter's phone number will be appended to the end of the link, and clicking the link will connect a call to the voter.</p><br/>
+	<p>Other dialing clients such as Skype or a mobile's phone app can be configured using the following link format:</p>
+	<pre>tel:+1</pre>
+	<p>If you are unable to successfully generate links, please contact an administrator for assistance.</p><br/>
+</p-overlayPanel>

@@ -1,0 +1,23 @@
+- Updated Legislative Sync
+    - Create a condensedDisplayCode field to allow searching for bill numbers without spaces
+    - Allow bills that have been substituted to attach amendments (BUGFIX)
+    - Fix timeout loop to ensure sync checks occur as intended (BUGFIX)
+- Update Legislation Search
+    - Allow search terms to be separated rather than requiring all terms to appear consecutively
+    - Add new condensedDisplayCode field to search fields
+- Legislative Rankings
+    - Apply 'disabled' styles to read only rating display to avoid user confusion
+- Legislative Comments
+    - Display confirmation dialog prior to deleting comments clarifying that ratings are not deleted with comments
+- Legislation Display Fix
+    - Ensure that missing amendments fail gracefully (BUGFIX)
+- Password Requirements
+    - Require minimum password length
+    - Require one alphabetical character
+    - Require one numeric character
+    - Improve validation process
+- Reset Password Links
+    - Separate "Register" and "Reset" functionalities to avoid user confusion
+    - Provide multiple opportunities to reset a forgotten password during login process
+- Upgrade Server
+    - Open upgrade-server script to HTTPS

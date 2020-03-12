@@ -1,0 +1,59 @@
+.getRecord {
+    cursor: pointer;
+    text-decoration: underline;
+    color: blue;
+}
+
+.gettingRecord {
+    cursor: wait;
+    text-decoration: underline;
+    color: blue;
+}
+
+:host >>> .editor .ql-toolbar {
+    padding: 0px;
+    border-bottom: 0px;
+}
+
+:host >>> .big-icon {
+    font-size: 5em !important;
+    top: 0 !important;
+}
+
+:host >>> .delete-confirm {
+    width: 70%;
+    display: inline-block;
+}
+
+:host >>> .delete-button {
+    background-color: orangered;
+    border-color: orangered;
+}
+
+:host >>> .delete-button:hover {
+    background-color: darkred !important;
+    border-color: darkred !important;
+}
+
+:host >>> .delete-button:focus {
+    background-color: darkred !important;
+    border-color: darkred !important;
+}
+
+:host >>> .cancel-delete {
+    background-color: lightgray;
+    border-color: lightgray;
+    color: black;
+}
+
+:host >>> .cancel-delete:hover {
+    background-color: whitesmoke !important;
+    border-color: whitesmoke !important;
+    color: black !important;
+}
+
+:host >>> .cancel-delete:focus {
+    background-color: whitesmoke !important;
+    border-color: whitesmoke !important;
+    color: black !important;
+}
