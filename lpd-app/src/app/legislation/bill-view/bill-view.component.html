@@ -103,7 +103,11 @@
                     <p-rating style="display: inline-block;" [stars]="1" (onRate)="rateBill(-2, $event)"
                             [(ngModel)]="negative1Rating" [cancel]="false"></p-rating>
                     <p-rating style="display: inline-block;" [stars]="3" (onRate)="rateBill(0, $event)"
-                            [(ngModel)]="positiveRating" (onCancel)="rateBill(0, $event)"></p-rating>
+                            [(ngModel)]="positiveRating" (onCancel)="rateBill(0, $event)"
+                            iconCancelClass="pi pi-times" ></p-rating>
+                </div>
+                <div style="text-align: center; width: 100%;">
+                    <span [class]="getLinkClass()" (click)="rateBill(0, $event)">Cancel Rating</span><br/><br/>
                 </div>
                 <p-editor [(ngModel)]="comments[bill.LegislationId]" styleClass="editor">
                     <p-header></p-header>
