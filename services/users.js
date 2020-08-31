@@ -69,7 +69,7 @@ module.exports = class UsersService {
 		console.log('Retrieving session:', req.session.username);
 
 		UsersService.#db.collection('users').find({
-			'username': req.session.username
+			'username': new RegExp(req.session.username, 'i')
 		}).toArray((err, results) => {
 			if (err) return UsersService[_serviceError](req, res, err);
 
@@ -113,7 +113,7 @@ module.exports = class UsersService {
 		if (!req.body.username) return res.status(400).send('No username');
 		var username = ENCRYPTION.rsaDecrypt(req.session.privateKey, UsersService.#passphrase, req.body.username);
 
-		UsersService.#db.collection('users').find({ 'username': username }).toArray((err, results) => {
+		UsersService.#db.collection('users').find({ 'username': new RegExp(username, 'i') }).toArray((err, results) => {
 			if (err) return UsersService[_serviceError](req, res, err);
 			if (results.length > 1) return res.status(409).send('Multiple users found');
 
@@ -178,13 +178,13 @@ module.exports = class UsersService {
 		if (!req.body.username) return res.status(400).send('No username');
 
 		var username = ENCRYPTION.rsaDecrypt(req.session.privateKey, UsersService.#passphrase, req.body.username);
-		UsersService.#db.collection('users').find({ 'username': username }).toArray((err, results) => {
+		UsersService.#db.collection('users').find({ 'username': new RegExp(username, 'i') }).toArray((err, results) => {
 			if (err) return UsersService[_serviceError](req, res, err);
 
 			ENCRYPTION.generateKeys(UsersService.#passphrase).then(keys => {
 				var token = ENCRYPTION.signToken(keys.privateKey, UsersService.#passphrase, 'TAXATION IS THEFT');
 
-				UsersService.#db.collection('users').updateOne({ 'username': username }, {
+				UsersService.#db.collection('users').updateOne({ 'username': new RegExp(username, 'i') }, {
 					'$set': {
 						'username': username,
 						'publicKey': keys.publicKey,
@@ -274,7 +274,7 @@ module.exports = class UsersService {
 
 		console.log(`Get user permissions for: ${req.session.username}`);
 
-		UsersService.#db.collection('users').find({ 'username': req.session.username }).toArray((err, results) => {
+		UsersService.#db.collection('users').find({ 'username': new RegExp(req.session.username, 'i') }).toArray((err, results) => {
 			if (err) return UsersService[_serviceError](req, res, err);
 			if (typeof results[0].permissions === 'undefined') return res.status(404).send('No permissions found');
 			var response = ENCRYPTION.encryptResponse(req, { 'permissions': results[0].permissions });
@@ -288,7 +288,7 @@ module.exports = class UsersService {
 
 		console.log(`Get user ${req.params.permission} AOR for: ${req.session.username}`);
 		var query = {
-			'username': req.session.username,
+			'username': new RegExp(req.session.username, 'i'),
 			'permission': Number(req.params.permission)
 		};
 
@@ -308,7 +308,7 @@ module.exports = class UsersService {
 		var request = ENCRYPTION.decryptRequest(req);
 		console.log(`Load user ${request.permission} AOR for: ${request.username}`);
 		var query = {
-			'username': request.username,
+			'username': new RegExp(request.username, 'i'),
 			'permission': request.permission
 		};
 
@@ -326,11 +326,11 @@ module.exports = class UsersService {
 		if (PermissionService.isForbidden(req.session.permissions, 'VOTER_SEARCH'))
 			return res.status(403).send('Unauthorized operation for user');
 
-		UsersService.#db.collection('users').find({ 'username': req.session.username }).toArray((err, results) => {
+		UsersService.#db.collection('users').find({ 'username': new RegExp(req.session.username, 'i') }).toArray((err, results) => {
 			if (err) return UsersService[_serviceError](req, res, err);
 			if (typeof results[0]['callSheetTemplate'] === 'undefined') {
 				UsersService.#db.collection('users').updateOne(
-						{ 'username': req.session.username },
+						{ 'username': new RegExp(req.session.username, 'i') },
 						SET_DEFAULT_LINK,
 						(err, response) => {
 							console.log(`No link configured for user ${req.session.username}.  Setting default.`);
@@ -354,7 +354,7 @@ module.exports = class UsersService {
 		console.log(`Updating call sheet link template for user ${req.session.username}`);
 
 		UsersService.#db.collection('users').updateOne(
-				{ 'username': req.session.username },
+				{ 'username': new RegExp(req.session.username, 'i') },
 				{ '$set': ENCRYPTION.decryptRequest(req) },
 				(err, result) => {
 					if (err) UsersService[_serviceError](req, res, err);
@@ -388,7 +388,7 @@ module.exports = class UsersService {
 		console.log(`Setting permissions ${request.permissions} for user ${request.username}`);
 
 		UsersService.#db.collection('users').updateOne(
-				{ 'username': request.username },
+				{ 'username': new RegExp(request.username, 'i') },
 				{ '$set': { 'permissions': request.permissions } },
 				(err, results) => {
 					if (err) return UsersService[_serviceError](req, res, err);
@@ -406,7 +406,7 @@ module.exports = class UsersService {
 		console.log(`Setting user ${request.permission} AOR:`);
 		console.log(request);
 		var query = {
-			'username': request.username,
+			'username': new RegExp(request.username, 'i'),
 			'permission': request.permission
 		};
 		var aorKeys = Object.keys(request.aorValues);

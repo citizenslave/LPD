@@ -11,13 +11,13 @@ cd -
 cd ~/.nvm
 echo --UPDATE NVM--
 git pull
-./install.sh
 cd -
 echo --INSTALL NODE--
-. ~/.nvm/nvm.sh nvm install 13.8.0
-. ~/.nvm/nvm.sh nvm use 13.8.0
+. ~/.nvm/nvm.sh
+nvm install 13.8.0 --latest-npm
+nvm use 13.8.0
 echo --UPDATE APP--
-git pull https://github.com/citizenslave/LPD.git
+git pull https://github.com/citizenslave/LPD-App.git
 npm install
 cd lpd-app
 npm install
