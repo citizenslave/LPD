@@ -17,7 +17,7 @@ echo --INSTALL NODE--
 nvm install 13.8.0 --latest-npm
 nvm use 13.8.0
 echo --UPDATE APP--
-git pull https://github.com/citizenslave/LPD.git
+git pull https://github.com/citizenslave/LPD.git public
 npm install
 cd lpd-app
 npm install
