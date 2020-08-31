@@ -26,23 +26,23 @@ import { ConfirmationService } from 'primeng/api';
 
 import { AppRoutingModule } from './app-routing.module';
 
-import { AppComponent } from './app.component';
-import { PasswordComponent } from './password/password.component';
-import { MainComponent } from './main/main.component';
-import { LoginComponent } from './login/login.component';
-import { CallSheetComponent } from './call-sheet/call-sheet.component';
-import { VoterSearchBarComponent } from './voter-search-bar/voter-search-bar.component';
-import { VoterSearchFormComponent } from './voter-search-form/voter-search-form.component';
-import { VoterListingComponent } from './voter-listing/voter-listing.component';
-import { LegislationComponent } from './legislation/legislation.component';
-import { BillViewComponent } from './legislation/bill-view/bill-view.component';
-import { AmendmentsViewComponent } from './legislation/amendments-view/amendments-view.component';
+import { AppComponent } from './components/app/app.component';
+import { PasswordComponent } from './components/password/password.component';
+import { VotersComponent } from './components/voters/voters.component';
+import { LoginComponent } from './components/login/login.component';
+import { CallSheetComponent } from './components/call-sheet/call-sheet.component';
+import { VoterSearchBarComponent } from './components/voters/voter-search-bar/voter-search-bar.component';
+import { VoterSearchFormComponent } from './components/voters/voter-search-form/voter-search-form.component';
+import { VoterListingComponent } from './components/voters/voter-listing/voter-listing.component';
+import { LegislationComponent } from './components/legislation/legislation.component';
+import { BillViewComponent } from './components/legislation/bill-view/bill-view.component';
+import { AmendmentsViewComponent } from './components/legislation/amendments-view/amendments-view.component';
 
 @NgModule({
 	declarations: [
 		AppComponent,
 		PasswordComponent,
-		MainComponent,
+		VotersComponent,
 		LoginComponent,
 		CallSheetComponent,
 		VoterSearchBarComponent,

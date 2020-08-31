@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
-import { LegislationComponent } from './legislation/legislation.component';
-import { MainComponent } from './main/main.component';
-import { PasswordComponent } from './password/password.component';
+import { LegislationComponent } from './components/legislation/legislation.component';
+import { VotersComponent } from './components/voters/voters.component';
+import { PasswordComponent } from './components/password/password.component';
 
 const routes: Routes = [{
 	'path': '',
@@ -14,7 +14,7 @@ const routes: Routes = [{
 	'component': LegislationComponent
 }, {
 	'path': 'voters',
-	'component': MainComponent
+	'component': VotersComponent
 }, {
 	'path': 'password/:token',
 	'component': PasswordComponent

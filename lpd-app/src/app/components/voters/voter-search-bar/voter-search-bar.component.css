@@ -1,0 +1,10 @@
+.ui-panel-title {
+    font-size: 18px;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+.search-buttons {
+    float: right;
+    margin-left: 5px;
+}

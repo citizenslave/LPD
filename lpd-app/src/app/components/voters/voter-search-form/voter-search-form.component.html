@@ -1,0 +1,35 @@
+<form [formGroup]="votersService.voterForm" (submit)="votersService.query($event)">
+	<div style="position: relative;">
+		<div class="overlay search" *ngIf="votersService.isSearchLoading">
+			<i class="pi pi-spin pi-spinner" [style.fontSize]="'5em'"></i>
+		</div>
+		<ul class="panelItems searchFields">
+			<ng-container *ngFor="let field of votersService.fields">
+				<br *ngIf="field.clear"/>
+				<li *ngIf="votersService.checkDisplayFlags(field.display, 'SEARCH')" class="voterField">
+					<h4 class="search">{{ field.label }}: </h4>
+					<ng-container [ngSwitch]="field.type">
+						<span *ngSwitchCase="votersService.cacheService.voterFieldTypes.BOOLEAN"
+								(click)="votersService.cycleCheck(field.field)"
+								[ngClass]="'pi pi-'+votersService.getCheckClass(field.field)"></span>
+						<p-multiSelect *ngSwitchCase="votersService.cacheService.voterFieldTypes.MULTISELECT"
+								styleClass="multiselect" maxSelectedLabels="1" (onPanelShow)="getValues(field.field)"
+								[options]="votersService.cacheService.voterFieldValues[field.field]"
+								[formControlName]="field.field"></p-multiSelect>
+						<p-multiSelect *ngSwitchCase="votersService.cacheService.voterFieldTypes.ARRAY"
+								styleClass="multiselect" maxSelectedLabels="1" (onPanelShow)="getValues(field.field)"
+								[options]="votersService.cacheService.voterFieldValues[field.field]"
+								[formControlName]="field.field"></p-multiSelect>
+						<p-calendar *ngSwitchCase="votersService.cacheService.voterFieldTypes.CALENDAR"
+								[showIcon]="true" dateFormat="yy-mm-dd" [readonlyInput]="true" selectionMode="range"
+								[showButtonBar]="true" [monthNavigator]="true" [yearNavigator]="true"
+								[yearRange]="'1900:'+thisYear()"
+								[formControlName]="field.field"></p-calendar>
+						<input *ngSwitchDefault type="text" pInputText [formControlName]="field.field"/>
+					</ng-container>
+				</li>
+			</ng-container>
+			<br/><input type="submit" style="visibility: hidden;"/>
+		</ul>
+	</div>
+</form>

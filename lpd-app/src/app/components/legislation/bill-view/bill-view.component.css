@@ -1,0 +1,40 @@
+.getRecord {
+    cursor: pointer;
+    text-decoration: underline;
+    color: blue;
+}
+
+.getRecord:hover {
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: bold;
+    color: blue;
+}
+
+.gettingRecord {
+    cursor: wait;
+    text-decoration: underline;
+    color: blue;
+}
+
+.gettingRecord:hover {
+    cursor: wait;
+    text-decoration: underline;
+    font-weight: bold;
+    color: blue;
+}
+
+:host >>> .editor .ql-toolbar {
+    padding: 0px;
+    border-bottom: 0px;
+}
+
+:host >>> .big-icon {
+    font-size: 5em !important;
+    top: 0 !important;
+}
+
+:host >>> div.delete-confirm {
+    width: 70%;
+    display: inline-block;
+}

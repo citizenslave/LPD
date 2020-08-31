@@ -6,7 +6,6 @@ import { Observable, of } from 'rxjs';
 
 import { TableModule } from 'primeng/table';
 
-import { VOTERS_FIELDS, VotersField } from './voters.const';
 import { CryptoService } from './crypto.service';
 import { CONSTANTS } from './constants.const';
 import { CacheService } from './cache.service';
@@ -16,26 +15,82 @@ import { CacheService } from './cache.service';
 })
 export class VotersService {
 	voterForm: FormGroup;
+
 	voterData: any = {};
 	fields: any[] = [];
-	resultColumns: number = 0;
 	queryObj: object = null;
+
+	searchBar: boolean = false;
+	isSearchLoading: boolean = false;
+
+	resultColumns: number = 0;
 	selectedVoter: object;
 
 	voterList: ElementRef<TableModule> = null;
 	editVoterData: ElementRef = null;
+
 	isEditLoading: boolean = false;
 	editField: object = {};
 	editForm: FormGroup;
 
-	searchBar: boolean = false;
 	showCallSheet: boolean = false;
 
 	constructor(
 			private cryptoService: CryptoService,
-			private http: HttpClient,
-			private fb: FormBuilder,
-			public cacheService: CacheService) {}
+			public cacheService: CacheService,
+			private fb: FormBuilder) {}
+
+	query(evt) {
+		console.log(evt);
+		evt.stopPropagation();
+		this.isSearchLoading = true;console.log(this.voterForm.value)
+		let fields = Object.getOwnPropertyNames(this.voterForm.value);
+		let queryObj = {};
+
+		for (let i=0; i<fields.length; i++) {
+			var value = this.voterForm.value[fields[i]];
+			if (value && (!Array.isArray(value) || value.length)) {
+				switch (this.cacheService.lookupField(fields[i]).type) {
+				case this.cacheService.voterFieldTypes.MULTISELECT:
+					queryObj[fields[i]] = { '$in': this.voterForm.value[fields[i]] };
+					break;
+				case this.cacheService.voterFieldTypes.CALENDAR:
+					if (this.voterForm.value[fields[i]][0] === this.voterForm.value[fields[i]][1]
+							|| this.voterForm.value[fields[i]][1] === null)
+						queryObj[fields[i]] = this.voterForm.value[fields[i]][0].toISOString();
+					else
+						queryObj[fields[i]] = {
+							'$gte': this.voterForm.value[fields[i]][0].toISOString(),
+							'$lt': this.voterForm.value[fields[i]][1].toISOString()
+						};
+					break;
+				default:
+					queryObj[fields[i]] = this.voterForm.value[fields[i]];
+				}
+			}
+		}
+		queryObj = { 'query': queryObj };
+		queryObj['first'] = evt.first?evt.first:0;
+		queryObj['rows'] = evt.rows?evt.rows:25;
+
+		console.log(queryObj);
+		this.voterForm.disable();
+		this.queryObj = null;
+		setTimeout(() => this.queryObj = queryObj);
+	}
+
+	lazyLoadVoters(evt: any): void {
+		if (!this.queryObj) return;
+		this.isSearchLoading = true;
+		if (!evt.query) this.queryObj['first'] = evt.first;
+		if (!evt.query) this.queryObj['rows'] = evt.rows;
+		this.find(this.queryObj).subscribe(json => {
+			this.voterData = json;
+			this.searchBar = true;
+			this.isSearchLoading = false;
+			this.voterForm.enable();
+		});
+	}
 
 	find(queryObj): Observable<any> {
 		return this.cryptoService.encryptedPost(`${CONSTANTS.APIURL}/voters/search`, queryObj);
@@ -43,6 +98,14 @@ export class VotersService {
 
 	update(queryObj): Observable<any> {
 		return this.cryptoService.encryptedPut(`${CONSTANTS.APIURL}/voters/update`, queryObj);
+	}
+
+	clearVoterSearch(evt: Event, reset: boolean = false) {
+		evt.stopPropagation();
+		this.voterData = [];
+		this.searchBar = false;
+		this.queryObj = null;
+		if (reset) this.voterForm.reset();
 	}
 
 	processVoterSearchKeys(json) {

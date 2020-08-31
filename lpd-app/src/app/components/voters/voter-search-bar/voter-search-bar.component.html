@@ -1,0 +1,15 @@
+<span class="ui-panel-title">
+	Voter Search{{ showResults() }}
+</span>
+<p-button [disabled]="disableClear()" type="button"
+		class="search-buttons" label="Clear"
+		(click)="votersService.clearVoterSearch($event)">
+</p-button>
+<p-button [disabled]="disableReset()" type="button"
+		class="search-buttons" label="Reset"
+		(click)="votersService.clearVoterSearch($event, true)">
+</p-button>
+<p-button [disabled]="disableSearch()" type="button"
+		class="search-buttons" label="Search"
+		(click)="votersService.query($event)">
+</p-button>
