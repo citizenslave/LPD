@@ -93,6 +93,7 @@ export class LegislationComponent implements OnInit {
 		};
 		this.isLoading = true;
 		this.legislativeService.getLegislation(this.query).subscribe(json => {
+			console.log(json);
 			this.isLoading = false;
 			this.legislation = json.results;
 			this.billCount = json.count;

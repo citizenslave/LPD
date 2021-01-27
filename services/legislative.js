@@ -63,11 +63,18 @@ module.exports = class LegislationService {
 			else
 				res.json({ 'status': 'DONE', 'lastSync': LegislationService.#lastSyncComplete });
 		} else {
-			res.json({
-				'status': 'SYNC',
-				'syncStarted': LegislationService.#syncInProgress,
-				'syncTime': new Date(new Date() - new Date(LegislationService.#syncInProgress)).getTime()
-			});
+			if (LegislationService.#syncInProgress.indexOf('ERROR:') !== -1) {
+				res.json({
+					'status': 'DONE',
+					'lastSync': LegislationService.#syncInProgress
+				});
+			} else {
+				res.json({
+					'status': 'SYNC',
+					'syncStarted': LegislationService.#syncInProgress,
+					'syncTime': new Date(new Date() - new Date(LegislationService.#syncInProgress)).getTime()
+				});
+			}
 		}
 	}
 
@@ -475,20 +482,21 @@ module.exports = class LegislationService {
 			request({ 'method': 'GET', 'url': serviceUrl }, (err, res, html) => {
 				if (err) return reject(err);
 				const $ = cheerio.load(html);
-				const mailLink = $('.info-value > a[href*=mailto]').toArray()[0].children[0].data;
+				try {
+				//const mailLink = $('.info-value > a[href*=mailto]').toArray()[0].children[0].data;
 				const imgLink = $('img.img-avatar').toArray()[0].attribs.src;
 				const phone = $('label:contains("Phone")').toArray();
-				if (phone.length === 0) legislator.phone = '';
+				if (phone.length === 0 || true) legislator.phone = '';
 				else legislator.phone = phone[0].parent.children[3].children[0].data.trim()
 						.match(/(\d{3}).{1,2}(\d{3}).(\d{4})/).slice(1).join('-');
-				legislator.email = mailLink;
+				//legislator.email = mailLink;
 				legislator.avatar = imgLink;
 				request({ 'url': imgLink, 'encoding': null }, (err, imgRes, data) => {
 					resolve({
 						'personId': legislator.PersonId,
 						'imgData': data
 					});
-				});
+				});} catch (e) {console.log(e);reject(e);}
 			});
 		});
 	}
@@ -586,8 +594,9 @@ module.exports = class LegislationService {
 		query = { '$and': query };
 		console.log('%j',query);
 
-		var cursor = LegislationService.#db.collection('legislation').find(query);
+		var cursor = LegislationService.#db.collection('legislation').find(query, { 'sort': { 'IntroductionDateTime': -1 }, 'allowDiskUse': true });
 		cursor.count().then(count => {
+			//cursor.allowDiskUse();
 			cursor.skip(req.body.first).limit(req.body.rows).toArray((err, results) => {
 				if (err) return LegislationService[_serviceError](req, res, err);
 				res.json({ 'count': count, 'results': results });
@@ -814,7 +823,11 @@ module.exports = class LegislationService {
 		if (LegislationService.#syncInProgress !== '') {
 			LegislationService.checkSync(req, res);
 		} else {
-			LegislationService.doLegSync().catch(console.log);
+			LegislationService.doLegSync().catch(e => {
+				console.log(e);
+				LegislationService.#syncInProgress = `ERROR: ${e}`;
+				LegislationService.#lastSyncComplete = Date.now();
+			});
 			LegislationService.checkSync(req, res);
 		}
 	}
