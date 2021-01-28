@@ -33,7 +33,7 @@ export class LegislativeService {
     return <Observable<LegislativeResponse>>this.http.post(this.baseUrl+'getLegislation', query);
   }
 
-  getImage(personId: number): Promise<typeof Image> {
+  getImage(personId: number): Observable<any> {
     if (this.legislatorImages[personId]) return new Observable(observer => {
       observer.next(this.legislatorImages[personId]);
       observer.complete();
