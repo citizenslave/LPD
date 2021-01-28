@@ -13,8 +13,8 @@ const FS = require('fs');
 const App = new Express();
 const PORT = 443;
 const httpsOptions = {
-	'key': FS.readFileSync('./ssl/privkey1.pem'),
-	'cert': FS.readFileSync('./ssl/cert1.pem')
+	'key': FS.readFileSync('./ssl/privkey.pem'),
+	'cert': FS.readFileSync('./ssl/fullchain.pem')
 };
 
 const UI_URL = require('./config/ui-config');
