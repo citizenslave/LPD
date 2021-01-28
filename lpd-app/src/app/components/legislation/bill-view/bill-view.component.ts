@@ -221,7 +221,7 @@ export class BillViewComponent implements OnInit {
         return `mailto:${address}`;
     }
 
-    getCacheLink(personId: number): string {
+    getCacheLink(personId: number): any {
         return this.sanitizer.bypassSecurityTrustResourceUrl(this.legislativeService.legislatorImages[personId]);
     }
 
