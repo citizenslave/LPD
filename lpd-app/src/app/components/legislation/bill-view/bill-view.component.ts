@@ -1,4 +1,5 @@
-import { Component, OnInit, Input } from "@angular/core";
+import { Component, OnInit, Input } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 
 import { SelectItem, ConfirmationService } from 'primeng/api';
 
@@ -16,6 +17,7 @@ export class BillViewComponent implements OnInit {
     @Input('bill') bill: any;
 
     userService: UserService;
+    sanitizer: DomSanitizer;
 
     isLoading: boolean = false;
 
@@ -54,8 +56,10 @@ export class BillViewComponent implements OnInit {
     constructor(
             private confirmationService: ConfirmationService,
             private _userService: UserService,
-            private legislativeService: LegislativeService) {
+            private legislativeService: LegislativeService,
+            private _sanitizer: DomSanitizer) {
         this.userService = this._userService;
+        this.sanitizer = _sanitizer;
     }
     
     ngOnInit(): void {
@@ -89,9 +93,10 @@ export class BillViewComponent implements OnInit {
     }
 
     loadImage(legislator: any, dialog: any = null): void {
-        this.legislativeService.getImage(legislator.PersonId).then(img => {
+        this.legislativeService.getImage(legislator.PersonId).subscribe(img => {
             if (dialog) dialog.visibleChange.isStopped = false;
             document.body.style.cursor = 'auto';
+            this.legislativeService.legislatorImages[legislator.PersonId] = img;
             this.legislatorInfo = legislator;
             this.isLoading = false;
         });
@@ -217,7 +222,7 @@ export class BillViewComponent implements OnInit {
     }
 
     getCacheLink(personId: number): string {
-        return this.legislativeService.getImageLink(personId);
+        return this.sanitizer.bypassSecurityTrustResourceUrl(this.legislativeService.legislatorImages[personId]);
     }
 
     getLinkClass(): string {

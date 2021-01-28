@@ -54,6 +54,10 @@ module.exports = class LegislationService {
 	static #syncInProgress = '';
 	static #lastSyncComplete = '';
 
+	static connect(_db) {
+		LegislationService.#db = _db;
+	}
+
 	static getLastSync() { return LegislationService.#lastSyncComplete; }
 	static getSyncStatus() { return LegislationService.#syncInProgress; }
 	static checkSync(req, res) {
@@ -78,9 +82,7 @@ module.exports = class LegislationService {
 		}
 	}
 
-	static connect(_db) {
-		LegislationService.#db = _db;
-	}
+//////////////////////
 
 	static legisRequest(url, formData) {
 		var options = {
@@ -483,20 +485,34 @@ module.exports = class LegislationService {
 				if (err) return reject(err);
 				const $ = cheerio.load(html);
 				try {
-				//const mailLink = $('.info-value > a[href*=mailto]').toArray()[0].children[0].data;
+					let mailLink = $('.info-value > a[href*=mailto]').toArray()[0].children[0].data;
+					legislator.email = mailLink;
+				} catch (e) {
+					console.log(`Could not find email for legislator ${legislator.PersonId}: ${legislator.ShortName}`);
+					console.log(e);
+				}
+				try {
+					let phone = $('.info-phone').toArray()[0].children[3].children[3].children[0];
+					legislator.phone = phone.data.match(/(\d{3}).{1,2}(\d{3}).(\d{4})/).slice(1).join('-');
+				} catch (e) {
+					console.log(`Could not find phone for legislator ${legislator.PersonId}: ${legislator.ShortName}`);
+					console.log(e);
+				}
 				const imgLink = $('img.img-avatar').toArray()[0].attribs.src;
-				const phone = $('label:contains("Phone")').toArray();
-				if (phone.length === 0 || true) legislator.phone = '';
-				else legislator.phone = phone[0].parent.children[3].children[0].data.trim()
-						.match(/(\d{3}).{1,2}(\d{3}).(\d{4})/).slice(1).join('-');
-				//legislator.email = mailLink;
-				legislator.avatar = imgLink;
-				request({ 'url': imgLink, 'encoding': null }, (err, imgRes, data) => {
+				if (imgLink.indexOf('data:image') !== -1) {
 					resolve({
 						'personId': legislator.PersonId,
-						'imgData': data
+						'imgData': imgLink
 					});
-				});} catch (e) {console.log(e);reject(e);}
+				} else {
+					request({ 'url': 'http://legis.delaware.gov/'+imgLink, 'encoding': null }, (err, imgRes, data) => {
+						// console.log(data.toString('base64'));
+						resolve({
+							'personId': legislator.PersonId,
+							'imgData': `data:image;base64,${data.toString('base64')}`
+						});
+					});
+				}
 			});
 		});
 	}
@@ -592,13 +608,17 @@ module.exports = class LegislationService {
 			return { '$or': wordQuery };
 		});
 		query = { '$and': query };
+		var options = {
+			'sort': { 'IntroductionDateTime': -1 },
+			'allowDiskUse': true
+		};
 		console.log('%j',query);
 
-		var cursor = LegislationService.#db.collection('legislation').find(query, { 'sort': { 'IntroductionDateTime': -1 }, 'allowDiskUse': true });
+		var cursor = LegislationService.#db.collection('legislation').find(query, options);
 		cursor.count().then(count => {
-			//cursor.allowDiskUse();
 			cursor.skip(req.body.first).limit(req.body.rows).toArray((err, results) => {
 				if (err) return LegislationService[_serviceError](req, res, err);
+				// console.log('%j', results[0]);
 				res.json({ 'count': count, 'results': results });
 			});
 		});
@@ -640,8 +660,10 @@ module.exports = class LegislationService {
 		LegislationService.#db.collection('legislatorImages').find(query)
 				.toArray((err, results) => {
 			if (err) return LegislationService[_serviceError](req, res, err);
-			res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-			res.end(Buffer.from(results[0].imgData.value(), 'binary'));
+			if (!results[0].imgData) {
+				res.end(Buffer.from(placeholderImg));
+			}
+			res.end(Buffer.from(results[0].imgData));
 		});
 	}
 
@@ -881,9 +903,9 @@ module.exports = class LegislationService {
 // 	console.log(json.committees[0]);
 // 	console.log(json.legislators);
 // });
-// module.exports.getLegislatorData().then(json => {
-// 	console.log(json.legislatorImages.map(l=>`${l.imgData}`)[0]);
-// });
+module.exports.getLegislatorDetails({"_id":{"$oid":"60122565cd9b84e48c97bc29"},"PersonId":24001,"AssemblyId":151,"AssemblyMemberId":1096,"AssemblyMemberTypeId":12,"ChamberId":2,"ChamberName":null,"DisplayName":"Eric Morrison","DistrictAbbreviation":"RD","DistrictAliasNickname":null,"DistrictAsNumber":27,"DistrictId":48,"DistrictNumber":"27","FirstName":"Eric","HasProfilePicture":false,"IsLeadershipRole":false,"LastName":"Morrison","LeadershipDisplayOrder":13,"MemberTypeName":"Representative","MiddleInitial":null,"PartyCode":"D","PartyId":1,"ShortName":"Morrison","phone":"302-744-4351","email":"Eric.Morrison@delaware.gov"}).then(json => {
+	// console.log(json);
+});
 // module.exports.getCommitteeInfo().then(json => {
 // 	console.log(json.committees[0]);
 // 	module.exports.getCommitteeMembers(json.committees[0]).then(console.log);

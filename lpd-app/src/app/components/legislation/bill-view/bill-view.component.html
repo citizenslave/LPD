@@ -184,7 +184,7 @@
 <p-dialog [(visible)]="legislatorInfo" (onClose)="legislatorInfo = undefined" [dismissableMask]="true"
         [style]="{ 'width': '30%' }" [modal]="true" [draggable]="false" [resizable]="false"
         [showHeader]="false" (click)="closeDialog($event, 'legislatorInfo')">
-    <img width="30%" [src]="getCacheLink(legislatorInfo?.PersonId) || ''"/>
+    <img width="30%" *ngIf="legislatorInfo" [src]="getCacheLink(legislatorInfo?.PersonId) || ''"/>
     <span style="float: right; width: 60%;">
         <h3>{{ legislatorInfo?.MemberTypeName }}<br/>{{ legislatorInfo?.DisplayName }}</h3>
         <div>({{ legislatorInfo?.PartyCode }}-{{ legislatorInfo?.DistrictNumber }})</div><br/>

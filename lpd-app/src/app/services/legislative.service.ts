@@ -34,19 +34,24 @@ export class LegislativeService {
   }
 
   getImage(personId: number): Promise<typeof Image> {
-    if (this.legislatorImages[personId]) return Promise.resolve(this.legislatorImages[personId]);
-
-    this.legislatorImages[personId] = new Image();
-    this.legislatorImages[personId].src = `${this.baseUrl}cacheLegislatorImage/${personId}`;
-
-    return new Promise((resolve, reject) => {
-      this.legislatorImages[personId].onload = () => {
-        resolve(this.legislatorImages[personId]);
-      }
-      this.legislatorImages[personId].onerror = () => {
-        reject(this.legislatorImages[personId]);
-      }
+    if (this.legislatorImages[personId]) return new Observable(observer => {
+      observer.next(this.legislatorImages[personId]);
+      observer.complete();
+      return { unsubscribe() {} };
     });
+
+    // this.legislatorImages[personId] = new Image();
+    // this.legislatorImages[personId].src = `${this.baseUrl}cacheLegislatorImage/${personId}`;
+
+    // return new Promise((resolve, reject) => {
+      return this.http.get(`${this.baseUrl}cacheLegislatorImage/${personId}`, { 'responseType': 'text' });
+    //   this.legislatorImages[personId].onload = () => {
+    //     resolve(this.legislatorImages[personId]);
+    //   }
+    //   this.legislatorImages[personId].onerror = () => {
+    //     reject(this.legislatorImages[personId]);
+    //   }
+    // });
   }
 
   getImageLink(personId: number): string {

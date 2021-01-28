@@ -48,7 +48,7 @@ App.use(SESSION({
 const defCon = console;
 console = new console.Console(
 		require('fs').createWriteStream(__dirname+'/logs/appserver.log', { 'flags': 'a' }),
-		process.stderr);
+		require('fs').createWriteStream(__dirname+'/logs/error.log', { 'flags': 'a' }));
 
 App.get('/api', (req, res) => {
 	res.send('OK');
