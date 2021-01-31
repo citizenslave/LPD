@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SelectItem, ConfirmationService } from 'primeng/api';
 
@@ -221,7 +221,7 @@ export class BillViewComponent implements OnInit {
         return `mailto:${address}`;
     }
 
-    getCacheLink(personId: number): any {
+    getCacheLink(personId: number): SafeResourceUrl {
         return this.sanitizer.bypassSecurityTrustResourceUrl(this.legislativeService.legislatorImages[personId]);
     }
 

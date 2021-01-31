@@ -24,7 +24,12 @@ export class LegislationComponent implements OnInit {
 
 	syncStatus: SyncStatus;
 
-	query: LegislativeQuery = { 'query': '', 'first': 0 };
+	gaSession: number = Math.ceil((new Date().getFullYear()) / 2) - 860;
+	loadedGaSession: number = this.gaSession;
+	minGaSession: number = 136;
+	maxGaSession: number = this.gaSession;
+	gaFocused: boolean = false;
+	query: LegislativeQuery = { 'query': '', 'first': 0, 'gaSession': this.gaSession };
 
 	legislation: Legislation[];
 	billCount: number;
@@ -42,7 +47,7 @@ export class LegislationComponent implements OnInit {
 	}
 
 	checkSync(hover: boolean = false): void {
-		this.legislativeService.checkSync().subscribe(json => {
+		this.legislativeService.checkSync(this.gaSession).subscribe(json => {
 			if ((!this.syncStatus || this.syncStatus.status === 'SYNC') && json.status === 'DONE')
 				this.isLoading = true;
 			if (this.syncStatus)
@@ -59,7 +64,7 @@ export class LegislationComponent implements OnInit {
 	}
 
 	doSync(): void {
-		this.legislativeService.doSync().subscribe(json => {
+		this.legislativeService.doSync(this.gaSession).subscribe(json => {
 			clearTimeout(this.syncStatus.checkInterval);
 			this.syncStatus = json;
 			this.syncStatus.checkInterval = setTimeout(this.checkSync.bind(this), 10000);
@@ -68,12 +73,13 @@ export class LegislationComponent implements OnInit {
 
 	showSyncStatus(active: boolean = false): string | boolean {
 		if (!this.syncStatus) return false;
-		if (active) return this.syncStatus.status === 'SYNC';
+		if (active) return (this.syncStatus.status === 'SYNC' || Number.isInteger(Number.parseInt(this.syncStatus.status)));
 		if (this.showSyncStatus(true)) {
-			return `Sync in progress...\n${this.syncStatus.syncTime}ms elapsed.`;
+			const session = this.syncStatus.status === 'SYNC'?this.loadedGaSession:this.syncStatus.status;
+			return `Sync of Session ${session} in progress...\n${this.syncStatus.syncTime}ms elapsed.`;
 		} else if (this.syncStatus.status === 'NONE') {
 			return `No sync recorded!`;
-		} else {
+		} else if (this.syncStatus.status === 'DONE') {
 			let dateString: string = formatDate(this.syncStatus.lastSync, 'M/d/yyyy', 'en-US');
 			let timeString: string = formatDate(this.syncStatus.lastSync, 'h:mm:ssaa', 'en-US');
 			return `Last sync completed on:\n${dateString} at ${timeString}`;
@@ -81,15 +87,17 @@ export class LegislationComponent implements OnInit {
 	}
 
 	syncIcon(): string {
-		if (this.showSyncStatus(true)) return 'pi pi-spin pi-refresh';
-		else return 'pi pi-refresh';
+		if (this.syncStatus && this.syncStatus.status === 'SYNC') return 'pi pi-spin pi-refresh';
+		else if (!this.syncStatus || Number.isNaN(Number.parseInt(this.syncStatus.status))) return 'pi pi-refresh';
+		else return 'pi pi-times';
 	}
 
 	lazyLoadLegis(evt: any): void {
 		this.query = {
 			'first': evt.first,
 			'rows': evt.rows,
-			'query': this.query.query
+			'query': this.query.query,
+			'gaSession': this.gaSession
 		};
 		this.isLoading = true;
 		this.legislativeService.getLegislation(this.query).subscribe(json => {
@@ -100,9 +108,37 @@ export class LegislationComponent implements OnInit {
 		});
 	}
 
+	gaSearch(update: number = 0, evt: KeyboardEvent = null): void {
+		if (update !== 0) {
+			if (typeof this.gaSession === 'string') {
+				this.gaSession = Number.parseInt(this.gaSession);
+			}
+			this.gaSession += update;
+			this.gaFocused = false;
+			this.loadedGaSession = this.gaSession;
+			this.updateQuery();
+			this.checkSync();
+		} else if (evt.code === 'Enter') {
+			if (typeof this.gaSession === 'string') {
+				this.gaSession = Number.parseInt(this.gaSession);
+			}
+			if (this.gaSession > this.maxGaSession) {
+				this.gaSession = this.maxGaSession;
+			}
+			if (this.gaSession < this.minGaSession) {
+				this.gaSession = this.minGaSession;
+			}
+			this.loadedGaSession = this.gaSession;
+			(evt.target as HTMLInputElement).select();
+			this.updateQuery();
+			this.checkSync();
+		}
+	}
+
 	updateQuery(newQuery: string = undefined): void {
 		if (newQuery || newQuery === '') this.query.query = newQuery;
 		this.query.first = 0;
+		this.query.gaSession = this.gaSession;
 		this.isLoading = true;
 		this.legislativeService.getLegislation(this.query).subscribe(json => {
 			this.isLoading = false;

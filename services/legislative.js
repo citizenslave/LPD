@@ -51,32 +51,50 @@ module.exports = class LegislationService {
 	static #getAmendmentSponsorsUrl = 'http://legis.delaware.gov/BillDetail?LegislationId=';
 	static #getLegislatorDetailsUrl = 'http://legis.delaware.gov/AssemblyMember/';
 
+	static #syncData = {};
 	static #syncInProgress = '';
 	static #lastSyncComplete = '';
 
 	static connect(_db) {
 		LegislationService.#db = _db;
+		LegislationService.#db.collection('syncStatus').find().toArray((error, result) => {
+			result.forEach(status => {
+				LegislationService.#syncData[status.gaSession] = status;
+			});
+		})
 	}
 
-	static getLastSync() { return LegislationService.#lastSyncComplete; }
-	static getSyncStatus() { return LegislationService.#syncInProgress; }
+	static getLastSync(gaSession) { return LegislationService.#syncData[gaSession].lastSyncComplete; }
+	static getSyncStatus(gaSession) { return LegislationService.#syncData[gaSession].syncInProgress; }
 	static checkSync(req, res) {
-		if (LegislationService.#syncInProgress === '') {
-			if (LegislationService.#lastSyncComplete === '')
+		const gaSession = req.query.gaSession || LegislationService[_getGaFromYear](new Date().getFullYear());
+		var syncData = LegislationService.#syncData[gaSession];
+		if (!syncData) syncData = LegislationService.#syncData[gaSession] = { 'gaSession': gaSession };
+		if (!syncData.syncInProgress) {
+			const ongoingSync = Object.values(LegislationService.#syncData).filter(s => s.syncInProgress);
+			if (ongoingSync.length) {
+				const elapsedTime = new Date(new Date() - new Date(ongoingSync[0].syncInProgress)).getTime()
+				res.json({
+					'status': ongoingSync[0].gaSession,
+					'syncStarted': ongoingSync[0].syncInProgress,
+					'syncTime': elapsedTime
+				});
+			} else if (!syncData.lastSyncComplete)
 				res.json({ 'status': 'NONE' });
 			else
-				res.json({ 'status': 'DONE', 'lastSync': LegislationService.#lastSyncComplete });
+				res.json({ 'status': 'DONE', 'lastSync': syncData.lastSyncComplete });
 		} else {
-			if (LegislationService.#syncInProgress.indexOf('ERROR:') !== -1) {
+			if (syncData.syncInProgress.indexOf('ERROR:') !== -1) {
 				res.json({
 					'status': 'DONE',
-					'lastSync': LegislationService.#syncInProgress
+					'lastSync': LegislationService.#syncData[gaSession].syncInProgress
 				});
 			} else {
+				const elapsedTime = new Date(new Date() - new Date(syncData.syncInProgress)).getTime()
 				res.json({
 					'status': 'SYNC',
-					'syncStarted': LegislationService.#syncInProgress,
-					'syncTime': new Date(new Date() - new Date(LegislationService.#syncInProgress)).getTime()
+					'syncStarted': syncData.syncInProgress,
+					'syncTime': elapsedTime
 				});
 			}
 		}
@@ -106,17 +124,22 @@ module.exports = class LegislationService {
 		});
 	}
 
-	static doLegSync() {
+	static doLegSync(gaSession) {
 		const syncStart = new Date();
-		console.log(`Begin sync at ${LegislationService.#syncInProgress = syncStart.toISOString()}.`);
+		gaSession = gaSession || LegislationService[_getGaFromYear](new Date().getFullYear());
+		if (!LegislationService.#syncData[gaSession])
+			LegislationService.#syncData[gaSession] = { 'gaSession': gaSession };
+		const syncData = LegislationService.#syncData[gaSession];
+		LegislationService.#syncData[gaSession].syncInProgress = syncStart.toISOString();
+		console.log(`Begin sync of [${gaSession}] at ${syncStart.toISOString()}.`);
 
 		return new Promise((resolve, reject) => {
 			const tasks = [
-				LegislationService.getAllLegislation(),
-				LegislationService.getAllSubstitutes(),
-				LegislationService.getAllAmendments(),
-				LegislationService.getLegislatorData(),
-				LegislationService.getCommitteeInfo()
+				LegislationService.getAllLegislation(gaSession),
+				LegislationService.getAllSubstitutes(gaSession),
+				LegislationService.getAllAmendments(gaSession),
+				LegislationService.getLegislatorData(gaSession),
+				LegislationService.getCommitteeInfo(gaSession)
 			];
 			Promise.all(tasks).then(data => {
 				Promise.all([
@@ -161,20 +184,24 @@ module.exports = class LegislationService {
 
 					const syncDone = new Date();
 					console.log(`Finished sync at ${syncDone.toISOString()}: ${syncDone - syncStart}ms`);
-					LegislationService.#lastSyncComplete = LegislationService.#syncInProgress;
-					LegislationService.#syncInProgress = '';
+					syncData.lastSyncComplete = syncDone.toISOString();
+					syncData.syncInProgress = '';
+					// LegislationService.#lastSyncComplete = LegislationService.#syncInProgress;
+					// LegislationService.#syncInProgress = '';
 
-					resolve({
-						'legislation': data[0].Data,
-						'legislators': data[3].legislators,
-						'committees': data[4].committees
-					});
+					LegislationService.saveSync().then(result => {
+						resolve({
+							'legislation': data[0].Data,
+							'legislators': data[3].legislators,
+							'committees': data[4].committees
+						});
+					}).catch(reject);
 				}).catch(reject)
 			}).catch(reject);
 		});
 	}
 
-	static getAllLegislation() {
+	static getAllLegislation(gaSession) {
 		var params = {
 			'selectedLegislationTypeId[0]': '1',
 			'selectedLegislationTypeId[1]': '2',
@@ -183,6 +210,7 @@ module.exports = class LegislationService {
 		};
 		Object.assign(params, LegislationService.#legSearchParams);
 		const serviceUrl = LegislationService.#getAllLegislationUrl;
+		params['selectedGA[0]'] = gaSession;
 
 		return new Promise((resolve, reject) => {
 			console.log('Getting bill count...');
@@ -197,10 +225,11 @@ module.exports = class LegislationService {
 		});
 	}
 
-	static getAllSubstitutes() {
+	static getAllSubstitutes(gaSession) {
 		const serviceUrl = LegislationService.#getAllLegislationUrl;
 		const params = { 'selectedLegislationTypeId[0]': '6' };
 		Object.assign(params, LegislationService.#legSearchParams);
+		params['selectedGA[0]'] = gaSession;
 
 		return new Promise((resolve, reject) => {
 			console.log('Getting substitute bill count...');
@@ -215,10 +244,11 @@ module.exports = class LegislationService {
 		});
 	}
 
-	static getAllAmendments() {
+	static getAllAmendments(gaSession) {
 		const serviceUrl = LegislationService.#getAllLegislationUrl;
 		const params = { 'selectedLegislationTypeId[0]': '5' };
 		Object.assign(params, LegislationService.#legSearchParams);
+		params['selectedGA[0]'] = gaSession;
 
 		return new Promise((resolve, reject) => {
 			console.log('Getting amendment count...');
@@ -321,6 +351,7 @@ module.exports = class LegislationService {
 				LegislationService.getAllReports(allItems).then(reports => {
 					console.log('Attaching reports to items...');
 					allItems.forEach((item, index) => {
+						console.log(`Attaching reports to item ${item.LegislationId}...`)
 						item.IntroductionDateTime =
 								LegislationService[_convertDate](item.IntroductionDateTime);
 						item.LegislationStatusDateTime =
@@ -421,13 +452,13 @@ module.exports = class LegislationService {
 		});
 	}
 
-	static getLegislatorData() {
+	static getLegislatorData(gaSession) {
 		const serviceUrl = LegislationService.#getLegislatorsUrl;
 		const params = {
 			'sort': '',
 			'group': '',
 			'filter': '',
-			'selectedGAs[0]': LegislationService[_getGaFromYear](new Date().getFullYear())
+			'selectedGAs[0]': gaSession
 		};
 
 		return new Promise((resolve, reject) => {
@@ -435,7 +466,7 @@ module.exports = class LegislationService {
 			LegislationService.legisRequest(serviceUrl, params).then(allLegislators => {
 				Promise.all([
 					LegislationService[_sequentialPromises](allLegislators.Data,
-							LegislationService.getLegislatorBills),
+							LegislationService.getLegislatorBills.bind(LegislationService, gaSession)),
 					LegislationService[_sequentialPromises](allLegislators.Data,
 							LegislationService.getLegislatorDetails)
 				]).then(data => {
@@ -450,7 +481,7 @@ module.exports = class LegislationService {
 		});
 	}
 
-	static getLegislatorBills(legislator) {
+	static getLegislatorBills(gaSession, legislator) {
 		const serviceUrl = LegislationService.#getLegislatorBillsUrl;
 		const params = {
 			'sort': '',
@@ -458,7 +489,7 @@ module.exports = class LegislationService {
 			'group': '',
 			'page': '1',
 			'pageSize': '0',
-			'assemblyId': LegislationService[_getGaFromYear](new Date().getFullYear()),
+			'assemblyId': gaSession,
 			'personId': legislator.PersonId.toString()
 		};
 
@@ -484,6 +515,7 @@ module.exports = class LegislationService {
 			request({ 'method': 'GET', 'url': serviceUrl }, (err, res, html) => {
 				if (err) return reject(err);
 				const $ = cheerio.load(html);
+
 				try {
 					let mailLink = $('.info-value > a[href*=mailto]').toArray()[0].children[0].data;
 					legislator.email = mailLink;
@@ -491,6 +523,7 @@ module.exports = class LegislationService {
 					console.log(`Could not find email for legislator ${legislator.PersonId}: ${legislator.ShortName}`);
 					console.log(e);
 				}
+
 				try {
 					let phone = $('.info-phone').toArray()[0].children[3].children[3].children[0];
 					legislator.phone = phone.data.match(/(\d{3}).{1,2}(\d{3}).(\d{4})/).slice(1).join('-');
@@ -498,7 +531,10 @@ module.exports = class LegislationService {
 					console.log(`Could not find phone for legislator ${legislator.PersonId}: ${legislator.ShortName}`);
 					console.log(e);
 				}
-				const imgLink = $('img.img-avatar').toArray()[0].attribs.src;
+				
+				var imgLink = $('img.img-avatar').toArray()[0];
+				if (imgLink) imgLink = imgLink.attribs.src;
+				else imgLink = 'Content/images/placeholder_leg.png';
 				if (imgLink.indexOf('data:image') !== -1) {
 					resolve({
 						'personId': legislator.PersonId,
@@ -517,10 +553,10 @@ module.exports = class LegislationService {
 		});
 	}
 
-	static getCommitteeInfo() {
+	static getCommitteeInfo(gaSession) {
 		const committeeServiceUrl = LegislationService.#getAllCommitteesUrl;
 		const meetingServiceUrl = LegislationService.#getAllMeetingsUrl;
-		const params = { 'assemblyId': 150 };
+		const params = { 'assemblyId': gaSession };
 
 		return new Promise((resolve, reject) => {
 			console.log('Getting all committees and upcoming meetings...');
@@ -576,6 +612,7 @@ module.exports = class LegislationService {
 	}
 
 	static [_convertDate](dateString) {
+		if (!dateString) return null;
 		return new Date(Number(dateString.match(LegislationService.#dateRegEx)[1]));
 	}
 
@@ -597,28 +634,32 @@ module.exports = class LegislationService {
 		if (!LegislationService.#db) return res.status(500).send('DB not ready');
 
 		console.log(req.body.query);
+
 		var words = req.body.query.split(' ');
 		var query = [ 'LegislationDisplayCode', 'Synopsis', 'LongTitle', 'Sponsor', 'condensedDisplayCode' ];
 		query = words.map(word => {
 			const wordQuery = query.map(field => {
 				const fieldQuery = {};
 				fieldQuery[field] = new RegExp(`.*${word}.*`, 'i');
+				fieldQuery[field].toJSON = fieldQuery[field].toString;
 				return fieldQuery;
 			});
 			return { '$or': wordQuery };
 		});
+		query.push({ 'AssemblyId': req.body.gaSession });
 		query = { '$and': query };
+
+		console.log('%j', JSON.stringify(query));
+
 		var options = {
 			'sort': { 'IntroductionDateTime': -1 },
 			'allowDiskUse': true
 		};
-		console.log('%j',query);
 
 		var cursor = LegislationService.#db.collection('legislation').find(query, options);
 		cursor.count().then(count => {
 			cursor.skip(req.body.first).limit(req.body.rows).toArray((err, results) => {
 				if (err) return LegislationService[_serviceError](req, res, err);
-				// console.log('%j', results[0]);
 				res.json({ 'count': count, 'results': results });
 			});
 		});
@@ -842,16 +883,32 @@ module.exports = class LegislationService {
 		if (PermissionService.isForbidden(req.session.permissions, 'SYSADMIN'))
 			return res.status(403).send('Unauthorized operation for user');
 		
-		if (LegislationService.#syncInProgress !== '') {
+		const gaSession = req.query.gaSession;
+		const syncData = LegislationService.#syncData[gaSession];
+		const ongoingSync = Object.values(LegislationService.#syncData).filter(s => s.syncInProgress);
+		if (ongoingSync.length || (syncData && syncData.syncInProgress)) {
 			LegislationService.checkSync(req, res);
 		} else {
-			LegislationService.doLegSync().catch(e => {
+			LegislationService.doLegSync(req.query.gaSession).catch(e => {
 				console.log(e);
-				LegislationService.#syncInProgress = `ERROR: ${e}`;
-				LegislationService.#lastSyncComplete = Date.now();
+				LegislationService.#syncData[gaSession].syncInProgress = `ERROR: ${e}`;
+				LegislationService.#syncData[gaSession].lastSyncComplete = Date.now();
+				LegislationService.saveSync().catch(console.log);
 			});
 			LegislationService.checkSync(req, res);
 		}
+	}
+
+	static saveSync() {
+		console.log(`Saving sync status...`);
+		return Promise.all(Object.values(LegislationService.#syncData).map(syncStatus => {
+			if (!LegislationService.#db) return Promise.reject('DB not ready');
+			if (!syncStatus.lastSyncComplete) return Promise.resolve();
+			const query = { 'gaSession': syncStatus.gaSession };
+			const update = { '$set': syncStatus };
+			const options = { 'upsert': true };
+			return LegislationService.#db.collection('syncStatus').updateOne(query, update, options);
+		}));
 	}
 
 	static [_arrayJoinAggregation](joinTable, joinField, arrayField, arrayObjField) {
@@ -893,7 +950,7 @@ module.exports = class LegislationService {
 // request.get('http://legis.delaware.gov/BillDetail?LegislationId=47922', (err, res, body) => {
 // 	console.log(body);
 // });
-// module.exports.doLegSync().then(json => {
+// module.exports.doLegSync(149).then(json => {
 // 	const HA1SS2SB50 = json.legislation.filter(i=>i.LegislationId === 37099)[0];
 // 	const SB37 = json.legislation.filter(i=>i.LegislationId === 47249)[0].substitutes[0];
 // 	const HB237 = json.legislation.filter(i=>i.LegislationId === 47743)[0].committeeMeetings;
@@ -901,11 +958,14 @@ module.exports = class LegislationService {
 // 	const HA2HB222 = json.legislation.filter(i=>i.LegislationId === 47702)[0].amendments.filter(a=>a.LegislationId === 47853)[0];
 // 	console.log(HA1SS2SB50.substitutes[1].amendments, SB37, HB237, HA1HB265, HA2HB222);
 // 	console.log(json.committees[0]);
-// 	console.log(json.legislators);
+	// console.log(json.legislators);
+	// console.log(json.legislation[0]);
 // });
-module.exports.getLegislatorDetails({"_id":{"$oid":"60122565cd9b84e48c97bc29"},"PersonId":24001,"AssemblyId":151,"AssemblyMemberId":1096,"AssemblyMemberTypeId":12,"ChamberId":2,"ChamberName":null,"DisplayName":"Eric Morrison","DistrictAbbreviation":"RD","DistrictAliasNickname":null,"DistrictAsNumber":27,"DistrictId":48,"DistrictNumber":"27","FirstName":"Eric","HasProfilePicture":false,"IsLeadershipRole":false,"LastName":"Morrison","LeadershipDisplayOrder":13,"MemberTypeName":"Representative","MiddleInitial":null,"PartyCode":"D","PartyId":1,"ShortName":"Morrison","phone":"302-744-4351","email":"Eric.Morrison@delaware.gov"}).then(json => {
-	// console.log(json);
-});
+// module.exports.getAllLegislation(149).then(d => console.log(d.Data[0]));
+// module.exports.getLegislatorData(149).then(d => console.log(d.sponsoredBills));
+// module.exports.getLegislatorDetails({"_id":{"$oid":"60122565cd9b84e48c97bc29"},"PersonId":24001,"AssemblyId":151,"AssemblyMemberId":1096,"AssemblyMemberTypeId":12,"ChamberId":2,"ChamberName":null,"DisplayName":"Eric Morrison","DistrictAbbreviation":"RD","DistrictAliasNickname":null,"DistrictAsNumber":27,"DistrictId":48,"DistrictNumber":"27","FirstName":"Eric","HasProfilePicture":false,"IsLeadershipRole":false,"LastName":"Morrison","LeadershipDisplayOrder":13,"MemberTypeName":"Representative","MiddleInitial":null,"PartyCode":"D","PartyId":1,"ShortName":"Morrison","phone":"302-744-4351","email":"Eric.Morrison@delaware.gov"}).then(json => {
+// 	console.log(json);
+// });
 // module.exports.getCommitteeInfo().then(json => {
 // 	console.log(json.committees[0]);
 // 	module.exports.getCommitteeMembers(json.committees[0]).then(console.log);

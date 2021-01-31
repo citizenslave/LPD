@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 
 import { Observable } from 'rxjs';
 
@@ -21,37 +21,30 @@ export class LegislativeService {
       private http: HttpClient,
       private crypto: CryptoService) {}
   
-  checkSync(): Observable<SyncStatus> {
-    return <Observable<SyncStatus>>this.http.get(this.baseUrl+'checkSync');
+  checkSync(gaSession: number): Observable<SyncStatus> {
+    return <Observable<SyncStatus>>this.http.get(this.baseUrl+`checkSync?gaSession=${gaSession}`);
   }
 
-  doSync(): Observable<SyncStatus> {
-    return <Observable<SyncStatus>>this.http.get(this.baseUrl+'startLegSync', { 'withCredentials': true });
+  doSync(gaSession: number): Observable<SyncStatus> {
+    let params = {
+      'withCredentials': true,
+      'params': new HttpParams().set('gaSession', gaSession.toString())
+    };
+
+    return <Observable<SyncStatus>>this.http.get(this.baseUrl+'startLegSync', params);
   }
 
   getLegislation(query: LegislativeQuery): Observable<LegislativeResponse> {
     return <Observable<LegislativeResponse>>this.http.post(this.baseUrl+'getLegislation', query);
   }
 
-  getImage(personId: number): Observable<any> {
+  getImage(personId: number): Observable<string> {
     if (this.legislatorImages[personId]) return new Observable(observer => {
       observer.next(this.legislatorImages[personId]);
       observer.complete();
       return { unsubscribe() {} };
     });
-
-    // this.legislatorImages[personId] = new Image();
-    // this.legislatorImages[personId].src = `${this.baseUrl}cacheLegislatorImage/${personId}`;
-
-    // return new Promise((resolve, reject) => {
-      return this.http.get(`${this.baseUrl}cacheLegislatorImage/${personId}`, { 'responseType': 'text' });
-    //   this.legislatorImages[personId].onload = () => {
-    //     resolve(this.legislatorImages[personId]);
-    //   }
-    //   this.legislatorImages[personId].onerror = () => {
-    //     reject(this.legislatorImages[personId]);
-    //   }
-    // });
+    return this.http.get(`${this.baseUrl}cacheLegislatorImage/${personId}`, { 'responseType': 'text' });
   }
 
   getImageLink(personId: number): string {
