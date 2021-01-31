@@ -64,8 +64,16 @@ module.exports = class LegislationService {
 		})
 	}
 
-	static getLastSync(gaSession) { return LegislationService.#syncData[gaSession].lastSyncComplete; }
-	static getSyncStatus(gaSession) { return LegislationService.#syncData[gaSession].syncInProgress; }
+	static getLastSync(gaSession) {
+		if (!gaSession) gaSession = LegislationService[_getGaFromYear](new Date().getFullYear());
+		return LegislationService.#syncData[gaSession].lastSyncComplete;
+	}
+
+	static getSyncStatus(gaSession) {
+		if (!gaSession) gaSession = LegislationService[_getGaFromYear](new Date().getFullYear());
+		return LegislationService.#syncData[gaSession].syncInProgress;
+	}
+
 	static checkSync(req, res) {
 		const gaSession = req.query.gaSession || LegislationService[_getGaFromYear](new Date().getFullYear());
 		var syncData = LegislationService.#syncData[gaSession];
