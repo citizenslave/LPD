@@ -272,10 +272,9 @@ export class UserManagementComponent {
     }
 
     changeAor(): void {
-        if (!this.aorSelection[this.selectedAorItem][this.selectAorField].length) {
+        if (this.selectedAorItem && !this.aorSelection[this.selectedAorItem][this.selectAorField].length) {
             delete this.aorSelection[this.selectedAorItem][this.selectedAorItem];
             this.selectAorField = '';
-            return;
         }
         this.userService.updateAor(
                 this.usersList[this.aorUser].username,
