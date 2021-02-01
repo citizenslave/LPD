@@ -86,7 +86,7 @@ module.exports = class VotersService {
 					}
 				}
 
-				console.log('Mapped AOR Query:\n', decryptedPayload);
+				console.log('Mapped AOR Query:\n%j', decryptedPayload);
 
 				var cursor = VotersService.#db.collection('voters').find(decryptedPayload, { 'allowDiskUse': true });
 				cursor.count().then(count => {
@@ -112,11 +112,15 @@ module.exports = class VotersService {
 								VotersService.#db.collection('voters').find(editQuery, { 'allowDiskUse': true })
 										.skip(first).limit(rows).toArray((err, editResults) => {
 									let editIds = editResults.map(item => item['_id'].toString());
+									let editable = 0;
 									results.map(item => {
 										if (editIds.includes(item['_id'].toString()) || 
-												!PermissionService.isForbidden(req.session.permissions, 'SYSADMIN'))
+												!PermissionService.isForbidden(req.session.permissions, 'SYSADMIN')) {
 											item['canEdit'] = true;
+											editable++;
+										}
 									});
+									console.log(`${editable} editable records`);
 									var response = {
 										'count': count,
 										'results': results

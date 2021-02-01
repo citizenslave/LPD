@@ -85,10 +85,10 @@ const voterFields = {
 				'type': parseType(voterFieldTypes, 'FUZZY') },
 
 		{ 'label': 'Date of Birth', 'field': 'DATE-OF-BIRTH', 'clear': true, 'order': 8,
-				'display': parseMask(voterFieldViews, 'ALL'), 'canEdit': false,
+				'display': parseMask(voterFieldViews, 'SEARCH|VIEWER'), 'canEdit': false,
 				'type': parseType(voterFieldTypes, 'CALENDAR') },
 		{ 'label': 'Birth Year', 'field': 'BIRTH-YEAR', 'clear': false, 'order': 9,
-				'display': parseMask(voterFieldViews, 'SEARCH|VIEWER'), 'canEdit': false,
+				'display': parseMask(voterFieldViews, 'ALL'), 'canEdit': false,
 				'type': parseType(voterFieldTypes, 'MULTISELECT') },
 
 		{ 'label': 'Phone Number', 'field': 'PHONE', 'clear': true, 'order': 10,

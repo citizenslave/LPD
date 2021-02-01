@@ -37,6 +37,7 @@ import { VoterListingComponent } from './components/voters/voter-listing/voter-l
 import { LegislationComponent } from './components/legislation/legislation.component';
 import { BillViewComponent } from './components/legislation/bill-view/bill-view.component';
 import { AmendmentsViewComponent } from './components/legislation/amendments-view/amendments-view.component';
+import { UserManagementComponent } from './components/user-management/user-management.component';
 
 @NgModule({
 	declarations: [
@@ -50,7 +51,8 @@ import { AmendmentsViewComponent } from './components/legislation/amendments-vie
 		VoterListingComponent,
 		LegislationComponent,
 		BillViewComponent,
-		AmendmentsViewComponent
+		AmendmentsViewComponent,
+		UserManagementComponent
 	],
 	imports: [
 		BrowserModule,

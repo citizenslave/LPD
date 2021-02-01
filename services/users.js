@@ -292,6 +292,15 @@ module.exports = class UsersService {
 			'permission': Number(req.params.permission)
 		};
 
+		if (PermissionService.isForbidden(req.session.permissions, 'SYSADMIN')) {
+			console.log('not sysadmin', req.session.permissions, query.permission, req.session.permissions & query.permission);
+			if (!(req.session.permissions & query.permission)) {
+				console.log('no edit permission');
+				req.session.aorQuery = { '$or': [{ '_id': { '$exists': false } }] };
+				return res.json({});
+			}
+		}
+
 		UsersService.#db.collection('voterAor').find(query).toArray((err, results) => {
 			if (err) return UsersService[_serviceError](req, res, err);
 			console.log(results);
@@ -409,15 +418,21 @@ module.exports = class UsersService {
 			'username': new RegExp(request.username, 'i'),
 			'permission': request.permission
 		};
-		var aorKeys = Object.keys(request.aorValues);
-		console.log('AOR keys:', aorKeys);
+
 		var newAorObj = {
 			'username': request.username,
 			'permission': request.permission,
-			'aorValues': {}
+			'aorValues': []
 		};
-		aorKeys.forEach(key => {
-			if (request.aorValues[key].length) newAorObj.aorValues[key] = request.aorValues[key];
+
+		newAorObj.aorValues = request.aorValues.map(aorValue => {
+			var newValue = {};
+			var aorKeys = Object.keys(aorValue);
+			console.log('AOR keys:', aorKeys);
+			aorKeys.forEach(key => {
+				if (aorValue[key].length) newValue[key] = aorValue[key];
+			});
+			return newValue;
 		});
 		console.log('New AOR obj:%j', newAorObj);
 
@@ -429,23 +444,29 @@ module.exports = class UsersService {
 
 	static [_processAor](session, aorValues) {
 		let sessionQuery = [];
-		Object.keys(aorValues).forEach(field => {
-			let fieldQuery = []
-			aorValues[field].forEach(aor => {
-				let termQuery = [];
-				aor.split('/').forEach(condition => {
-					let query = condition.split(':');
-					let term = {};
-					term[query[0]] = query[1];
-					termQuery.push(term);
+		if (!(aorValues instanceof Array)) aorValues = [aorValues];
+		aorValues.forEach(aorItem => {
+			let itemQuery = [];
+			Object.keys(aorItem).forEach(field => {
+				let fieldQuery = []
+				aorItem[field].forEach(aor => {
+					let termQuery = [];
+					aor.split('/').forEach(condition => {
+						let query = condition.split(':');
+						let term = {};
+						term[query[0]] = query[1];
+						termQuery.push(term);
+					});
+					termQuery = { '$and': termQuery };
+					fieldQuery.push(termQuery);
 				});
-				termQuery = { '$and': termQuery };
-				fieldQuery.push(termQuery);
+				fieldQuery = { '$or': fieldQuery };
+				itemQuery.push(fieldQuery);
 			});
-			fieldQuery = { '$or': fieldQuery };
-			sessionQuery.push(fieldQuery);
+			if (!itemQuery.length) itemQuery.push({ '_id': { '$exists': true } });
+			itemQuery = { '$and': itemQuery };
+			sessionQuery.push(itemQuery);
 		});
-		if (!sessionQuery.length) sessionQuery.push({ '_id': { '$exists': true } });
 		sessionQuery = { '$or': sessionQuery };
 		session.aorQuery = sessionQuery;
 	}

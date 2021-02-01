@@ -1,0 +1,93 @@
+ul.panelItems {
+	list-style: none;
+	text-align: center;
+	padding: 0;
+}
+
+ul {
+	list-style: none;
+}
+
+ul > li.aorselect {
+    text-align: center;
+}
+
+ul > li {
+	margin: 0px 0px 10px 0px;
+}
+
+i.helperIcon {
+	font-size: 2em;
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+.multiselect {
+	width: 172.799px;
+	text-align: left;
+}
+
+.aorselect {
+	width: 450px;
+	text-align: left;
+}
+
+button.clearSearch {
+    border: none;
+    outline: none;
+    position: relative;
+    width: 0;
+    margin-top: -10px;
+    color: rgb(122, 122, 122);
+}
+
+button.clearSearch:hover {
+    color: #000;
+}
+
+button.clearSearch:enabled:focus {
+    box-shadow: none;
+}
+
+.ui-g-3, .ui-g-9, .ui-g-12 {
+    padding: 0;
+}
+
+::ng-deep .userList .ui-panel-content {
+    min-height: calc(100vh - 120px);
+}
+
+tr.user:hover {
+    font-weight: bold;
+}
+
+td > .pi:hover {
+    font-weight: bold;
+}
+
+tr.ownUser {
+    color: gray !important;
+    font-style: italic;
+}
+
+div.overlay {
+	position: absolute;
+	z-index: 10000;
+	background-color: #888;
+	opacity: 0.7;
+}
+
+div.overlay.aor {
+    top: calc(112px);
+    bottom: calc(8px);
+    left: calc(9px);
+    right: calc(9px);
+}
+
+div.overlay > i {
+	position: relative;
+	top: calc(50% - 0.5em);
+	left: 50%;
+	font-size: 5em;
+	color: black;
+}

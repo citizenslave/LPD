@@ -15,6 +15,14 @@ button.clearSearch {
     color: rgb(122, 122, 122);
 }
 
+button.clearSearch:hover {
+    color: #000;
+}
+
+button.clearSearch:enabled:focus {
+    box-shadow: none;
+}
+
 .ui-g-3, .ui-g-6 {
     padding: 2px 0 0 0;
 }
@@ -23,14 +31,6 @@ button.clearSearch {
     position: relative;
     top: -3px;
     font-size: 10px;
-}
-
-button.clearSearch:hover {
-    color: #000;
-}
-
-button.clearSearch:enabled:focus {
-    box-shadow: none;
 }
 
 div.overlay {

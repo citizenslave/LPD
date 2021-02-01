@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, EventEmitter, Output } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -15,6 +15,9 @@ export class CacheService {
 	voterFieldTypes;
 	voterFields;
 	voterFieldValues = {};
+	cacheLoaded: boolean = false;
+
+	@Output() cacheListener: EventEmitter<void> = new EventEmitter();
 
 	constructor(
 			private cryptoService: CryptoService,
@@ -22,15 +25,15 @@ export class CacheService {
 
 	refreshCache() {
 		return new Observable(observer => {
-			forkJoin(
+			forkJoin([
 					this.getPermissions(),
 					this.getVoterFieldViews(),
 					this.getVoterFieldTypes(),
-					this.getVoterFields()/*,
-					this.getVoterFieldValues()*/).subscribe(json => {
-				// this.voterFieldValues = json[4];
+					this.getVoterFields()]).subscribe(json => {
 				observer.next(json);
 				observer.complete();
+				this.cacheLoaded = true;
+				this.cacheListener.emit();
 			},
 			err => {
 				observer.error(err);
