@@ -467,6 +467,7 @@ module.exports = class UsersService {
 			itemQuery = { '$and': itemQuery };
 			sessionQuery.push(itemQuery);
 		});
+		if (!sessionQuery.length) sessionQuery.push({ '_id': { '$exists': true } });
 		sessionQuery = { '$or': sessionQuery };
 		session.aorQuery = sessionQuery;
 	}
