@@ -7,6 +7,9 @@ const DB_NAME = 'LPD',
 
 const FS = require('fs'), READLINE = require('readline');
 
+// Save file fields
+const FIELDS = [];
+const TIMESTAMP = Date.now();
 /**
  * Transform CoE File Fields to merge with the DB fields.
  * - const: Set to a constant value
@@ -89,9 +92,6 @@ const FIELD_XFORM = {
         ]
     }
 };
-// Save file fields
-const FIELDS = [];
-const TIMESTAMP = Date.now();
 
 if (process.argv.length > 3) {
     MongoClient.connect(MONGO_URL, DB_OPTIONS, (err, db) => {
